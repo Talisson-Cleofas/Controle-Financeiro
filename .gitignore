@@ -1,0 +1,13 @@
+node_modules/
+.env
+.DS_Store
+npm-debug.log*
+android/
+ios/
+dist/
+build/
+node_modules
+.env
+.DS_Store
+dist
+build

@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Controle Financeiro Profissional</title>
+<meta name="theme-color" content="#5b7cfa" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+<script src="config.js"></script>
+<style>
+:root{
+  --bg:#0b0f17;
+  --bg-soft:#101827;
+  --card:#151d2b;
+  --card-2:#1b2638;
+  --text:#f8fafc;
+  --muted:#9ca3af;
+  --muted-2:#64748b;
+  --primary:#5b7cfa;
+  --primary-2:#7c3aed;
+  --primary-soft:rgba(91,124,250,.16);
+  --success:#34d399;
+  --success-soft:rgba(52,211,153,.12);
+  --danger:#fb7185;
+  --danger-soft:rgba(251,113,133,.13);
+  --warning:#fbbf24;
+  --warning-soft:rgba(251,191,36,.13);
+  --border:#273244;
+  --input:#0f172a;
+  --shadow:0 22px 55px rgba(0,0,0,.25);
+  --radius:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  min-height:100vh;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(91,124,250,.24), transparent 34rem),
+    radial-gradient(circle at top right, rgba(124,58,237,.16), transparent 34rem),
+    var(--bg);
+  color:var(--text);
+  padding:22px;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+a{color:inherit}
+.container{max-width:1260px;margin:0 auto}
+.hidden{display:none!important}
+.app-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-mark{width:50px;height:50px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--primary-2));box-shadow:0 14px 30px rgba(91,124,250,.28);font-size:25px}
+.brand h1{font-size:clamp(24px,3vw,34px);line-height:1.08;font-weight:850;letter-spacing:-.045em}
+.brand p{color:var(--muted);font-size:14px;margin-top:6px}
+.header-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.user-chip{border:1px solid var(--border);background:rgba(15,23,42,.7);border-radius:999px;padding:9px 12px;color:var(--muted);font-size:13px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:rgba(21,29,43,.74);border:1px solid var(--border);backdrop-filter:blur(14px);padding:8px;border-radius:22px;margin-bottom:22px;position:sticky;top:12px;z-index:10}
+.tab-btn{border:0;color:var(--muted);background:transparent;padding:13px 14px;border-radius:15px;font-weight:750;transition:.2s ease}
+.tab-btn:hover{background:var(--card-2);color:var(--text)}
+.tab-btn.active{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;box-shadow:0 14px 28px rgba(91,124,250,.24)}
+.screen{display:none}.screen.active{display:block;animation:fadeIn .18s ease}@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.grid{display:grid;gap:16px}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.main-grid{grid-template-columns:1.1fr .9fr}
+.card{background:linear-gradient(180deg,rgba(27,38,56,.94),rgba(21,29,43,.94));border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.card.flat{box-shadow:none}.card-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.card-title h2{font-size:18px;font-weight:850;letter-spacing:-.025em}.card-title p{font-size:13px;color:var(--muted);margin-top:4px}.section-space{margin-top:16px}
+.stat{border:1px solid var(--border);background:rgba(15,23,42,.64);border-radius:18px;padding:18px}.stat .label{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:800}.stat .value{margin-top:10px;font-size:clamp(22px,3vw,32px);font-weight:900;letter-spacing:-.04em}.stat .hint{margin-top:6px;color:var(--muted);font-size:13px}.stat.success .value{color:var(--success)}.stat.danger .value{color:var(--danger)}.stat.warning .value{color:var(--warning)}
+.health{display:flex;align-items:flex-start;gap:14px;border-radius:20px;padding:20px;border:1px solid var(--border);background:rgba(15,23,42,.68);margin-bottom:16px}.health.ok{border-color:rgba(52,211,153,.5);background:var(--success-soft)}.health.warn{border-color:rgba(251,191,36,.5);background:var(--warning-soft)}.health.bad{border-color:rgba(251,113,133,.5);background:var(--danger-soft)}.health .icon{font-size:30px}.health h2{font-size:18px;margin-bottom:5px}.health p{color:var(--muted);font-size:14px;line-height:1.45}
+.progress{height:12px;border-radius:999px;background:#0f172a;border:1px solid var(--border);overflow:hidden}.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--primary-2));border-radius:999px;transition:.25s ease}.progress.warn span{background:var(--warning)}.progress.bad span{background:var(--danger)}
+label{display:block;margin-bottom:7px;color:var(--muted);font-size:13px;font-weight:750}.field{margin-bottom:14px}.field-row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.form-grid{display:grid;grid-template-columns:1.3fr .65fr .7fr .75fr .75fr;gap:12px;align-items:end}
+input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13px;background:var(--input);color:var(--text);padding:13px 14px;outline:none;transition:.2s ease}textarea{resize:vertical;min-height:84px}input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}input::placeholder,textarea::placeholder{color:var(--muted-2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:13px;padding:12px 16px;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary-2));font-weight:850;box-shadow:0 12px 25px rgba(91,124,250,.22);transition:.2s ease;text-decoration:none}.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}.btn:disabled{opacity:.58;cursor:not-allowed;transform:none}.btn.ghost{background:rgba(15,23,42,.72);border:1px solid var(--border);box-shadow:none;color:var(--text)}.btn.danger{background:var(--danger);box-shadow:none}.btn.success{background:var(--success);box-shadow:none;color:#062a1d}.btn.small{padding:8px 10px;border-radius:10px;font-size:12px}.btn.full{width:100%}
+.filter-bar{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1.4fr auto;gap:10px;align-items:end}.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:16px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:13px 14px;border-bottom:1px solid var(--border);text-align:left;font-size:14px}th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;background:rgba(15,23,42,.74)}td{color:#e5e7eb}tr:last-child td{border-bottom:0}tbody tr:hover{background:rgba(15,23,42,.42)}.tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:rgba(15,23,42,.75);border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800;color:#dbeafe}.tag.income{color:var(--success);border-color:rgba(52,211,153,.35);background:var(--success-soft)}.tag.expense{color:var(--danger);border-color:rgba(251,113,133,.35);background:var(--danger-soft)}.tag.pending{color:var(--warning);border-color:rgba(251,191,36,.35);background:var(--warning-soft)}.amount-income{color:var(--success);font-weight:900}.amount-expense{color:var(--danger);font-weight:900}.empty{text-align:center;color:var(--muted);padding:34px 20px}.list{list-style:none;display:grid;gap:10px}.list li{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);background:rgba(15,23,42,.58);padding:13px;border-radius:15px}.list strong{display:block}.list small{color:var(--muted)}
+.auth-shell{min-height:calc(100vh - 44px);display:grid;place-items:center}.auth-card{width:min(100%,980px);display:grid;grid-template-columns:1fr 1fr;overflow:hidden;padding:0}.auth-hero{padding:34px;background:linear-gradient(135deg,rgba(91,124,250,.26),rgba(124,58,237,.18));border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;gap:28px}.auth-hero h1{font-size:clamp(30px,4vw,48px);letter-spacing:-.055em;line-height:1}.auth-hero p{color:#d1d5db;line-height:1.55;margin-top:14px}.auth-body{padding:34px}.auth-tabs{display:flex;background:rgba(15,23,42,.8);border:1px solid var(--border);border-radius:15px;padding:6px;margin-bottom:18px}.auth-tabs button{flex:1;border:0;background:transparent;color:var(--muted);border-radius:11px;padding:10px;font-weight:850}.auth-tabs button.active{background:var(--card-2);color:var(--text)}.secure-list{list-style:none;display:grid;gap:10px;margin-top:18px}.secure-list li{color:#e5e7eb;font-size:14px;display:flex;gap:8px;align-items:center}
+.toast{position:fixed;right:22px;bottom:22px;background:#fff;color:#0f172a;border-radius:14px;padding:14px 16px;font-weight:850;box-shadow:0 16px 40px rgba(0,0,0,.3);z-index:50;display:none;max-width:min(420px,calc(100vw - 44px))}.toast.show{display:block;animation:toastIn .18s ease}@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;place-items:center;padding:20px;z-index:40}.modal.show{display:grid}.modal-card{width:min(100%,560px)}.modal-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:12px}.muted{color:var(--muted)}.danger-text{color:var(--danger)}.success-text{color:var(--success)}.warning-text{color:var(--warning)}.print-only{display:none}
+@media(max-width:980px){.grid-4,.grid-3,.main-grid{grid-template-columns:1fr 1fr}.form-grid,.filter-bar{grid-template-columns:1fr 1fr}.auth-card{grid-template-columns:1fr}.auth-hero{border-right:0;border-bottom:1px solid var(--border)}}
+@media(max-width:720px){body{padding:14px}.app-header{flex-direction:column}.header-actions{justify-content:flex-start}.tabs{grid-template-columns:1fr 1fr;position:static}.grid-4,.grid-3,.grid-2,.main-grid,.field-row,.form-grid,.filter-bar{grid-template-columns:1fr}.card{padding:17px}.brand-mark{width:44px;height:44px}.auth-body,.auth-hero{padding:22px}.toast{right:14px;bottom:14px}.btn{width:100%}.table-actions{display:grid;gap:6px}}
+@media print{body{background:#fff;color:#111;padding:0}.no-print,.tabs,.header-actions,#authView{display:none!important}.container{max-width:none}.card,.stat{box-shadow:none;border-color:#ddd;background:#fff;color:#111}.screen{display:block!important}.screen:not(#screen-relatorio){display:none!important}th{background:#f3f4f6;color:#374151}td{color:#111}.print-only{display:block}.tag{color:#111;background:#fff}.amount-income,.amount-expense{color:#111}}
+</style>
+</head>
+<body>
+<div id="authView" class="auth-shell">
+  <div class="card auth-card">
+    <div class="auth-hero">
+      <div>
+        <div class="brand-mark">💰</div>
+        <h1 style="margin-top:18px">Controle financeiro profissional</h1>
+        <p>Agora com login, API protegida e MongoDB. Cada usuário acessa somente os próprios dados.</p>
+        <ul class="secure-list">
+          <li>✅ Senha criptografada no backend</li>
+          <li>✅ Dados privados por usuário</li>
+          <li>✅ Web, PWA e base para app mobile</li>
+          <li>✅ Relatórios mensais e exportação CSV</li>
+        </ul>
+      </div>
+      <div class="muted" style="font-size:13px">Configure a URL da API antes de publicar em produção.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-tabs">
+        <button id="loginTab" class="active" type="button">Entrar</button>
+        <button id="registerTab" type="button">Criar conta</button>
+      </div>
+
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginEmail">E-mail</label>
+          <input id="loginEmail" type="email" autocomplete="email" placeholder="voce@email.com" required />
+        </div>
+        <div class="field">
+          <label for="loginPassword">Senha</label>
+          <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Sua senha" required />
+        </div>
+        <button class="btn full" type="submit">Entrar no app</button>
+      </form>
+
+      <form id="registerForm" class="hidden">
+        <div class="field">
+          <label for="registerName">Nome</label>
+          <input id="registerName" type="text" autocomplete="name" placeholder="Seu nome" required />
+        </div>
+        <div class="field">
+          <label for="registerEmail">E-mail</label>
+          <input id="registerEmail" type="email" autocomplete="email" placeholder="voce@email.com" required />
+        </div>
+        <div class="field">
+          <label for="registerPassword">Senha</label>
+          <input id="registerPassword" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" minlength="6" required />
+        </div>
+        <button class="btn full" type="submit">Criar conta e entrar</button>
+      </form>
+
+      <div class="card flat section-space" style="background:rgba(15,23,42,.58)">
+        <div class="card-title" style="margin-bottom:10px">
+          <div>
+            <h2 style="font-size:15px">URL da API</h2>
+            <p>Use localhost no desenvolvimento e a URL publicada em produção.</p>
+          </div>
+        </div>
+        <div class="field">
+          <input id="apiUrlInput" type="url" placeholder="http://localhost:3000/api" />
+        </div>
+        <button class="btn ghost small" id="saveApiUrlBtn" type="button">Salvar URL da API</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="appView" class="container hidden">
+  <header class="app-header no-print">
+    <div class="brand">
+      <div class="brand-mark">💰</div>
+      <div>
+        <h1>Controle Financeiro</h1>
+        <p>Dashboard, lançamentos, relatórios e MongoDB Atlas.</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="user-chip" id="userChip">Usuário</span>
+      <button class="btn ghost" id="syncOldDataBtn" type="button">Importar dados antigos</button>
+      <button class="btn ghost" id="logoutBtn" type="button">Sair</button>
+    </div>
+  </header>
+
+  <nav class="tabs no-print">
+    <button class="tab-btn active" data-tab="painel" type="button">📊 Painel</button>
+    <button class="tab-btn" data-tab="lancamentos" type="button">➕ Lançamentos</button>
+    <button class="tab-btn" data-tab="relatorio" type="button">📄 Relatório</button>
+    <button class="tab-btn" data-tab="config" type="button">⚙️ Config</button>
+  </nav>
+
+  <section class="screen active" id="screen-painel">
+    <div id="healthBox" class="health">
+      <div class="icon">⚖️</div>
+      <div>
+        <h2 id="healthTitle">Carregando saúde financeira...</h2>
+        <p id="healthText">Buscando informações no servidor.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-4">
+      <div class="stat success"><div class="label">Receitas do mês</div><div class="value" id="statIncome">R$ 0,00</div><div class="hint">Entradas registradas</div></div>
+      <div class="stat danger"><div class="label">Despesas do mês</div><div class="value" id="statExpense">R$ 0,00</div><div class="hint">Saídas registradas</div></div>
+      <div class="stat"><div class="label">Saldo</div><div class="value" id="statBalance">R$ 0,00</div><div class="hint">Receitas - despesas</div></div>
+      <div class="stat warning"><div class="label">Pendências</div><div class="value" id="statPending">R$ 0,00</div><div class="hint">Itens não pagos</div></div>
+    </div>
+
+    <div class="grid main-grid section-space">
+      <div class="card">
+        <div class="card-title">
+          <div><h2>Meta mensal</h2><p>Controle o limite de despesas deste mês.</p></div>
+        </div>
+        <div class="progress" id="budgetProgress"><span id="budgetBar"></span></div>
+        <p class="muted" id="budgetText" style="margin-top:10px">Meta ainda não definida.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <div><h2>Maiores despesas</h2><p>Top gastos do mês selecionado.</p></div>
+        </div>
+        <ul class="list" id="topExpensesList"><li class="empty">Nenhum gasto encontrado.</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-lancamentos">
+    <div class="card">
+      <div class="card-title">
+        <div><h2 id="formTitle">Novo lançamento</h2><p>Cadastre receitas e despesas de forma segura.</p></div>
+      </div>
+      <form id="transactionForm">
+        <div class="form-grid">
+          <div class="field">
+            <label for="description">Descrição</label>
+            <input id="description" type="text" placeholder="Ex: Conta de luz" required />
+          </div>
+          <div class="field">
+            <label for="amount">Valor</label>
+            <input id="amount" type="number" min="0.01" step="0.01" placeholder="0,00" required />
+          </div>
+          <div class="field">
+            <label for="type">Tipo</label>
+            <select id="type" required>
+              <option value="expense">Despesa</option>
+              <option value="income">Receita</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="category">Categoria</label>
+            <select id="category" required></select>
+          </div>
+          <div class="field">
+            <label for="date">Data</label>
+            <input id="date" type="date" required />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status">
+              <option value="paid">Pago</option>
+              <option value="pending">Pendente</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="notes">Observações</label>
+            <input id="notes" type="text" placeholder="Opcional" />
+          </div>
+        </div>
+        <div class="header-actions" style="justify-content:flex-start">
+          <button class="btn" type="submit" id="saveTransactionBtn">Salvar lançamento</button>
+          <button class="btn ghost hidden" type="button" id="cancelEditBtn">Cancelar edição</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card section-space">
+      <div class="card-title">
+        <div><h2>Lançamentos</h2><p>Use os filtros para encontrar movimentações.</p></div>
+      </div>
+      <div class="filter-bar no-print">
+        <div class="field"><label for="filterMonth">Mês</label><input id="filterMonth" type="month" /></div>
+        <div class="field"><label for="filterType">Tipo</label><select id="filterType"><option value="">Todos</option><option value="income">Receita</option><option value="expense">Despesa</option></select></div>
+        <div class="field"><label for="filterCategory">Categoria</label><select id="filterCategory"><option value="">Todas</option></select></div>
+        <div class="field"><label for="filterStatus">Status</label><select id="filterStatus"><option value="">Todos</option><option value="paid">Pago</option><option value="pending">Pendente</option></select></div>
+        <div class="field"><label for="filterSearch">Buscar</label><input id="filterSearch" type="search" placeholder="Descrição" /></div>
+        <button class="btn ghost" id="clearFiltersBtn" type="button">Limpar</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Status</th><th>Valor</th><th class="no-print">Ações</th></tr></thead><tbody id="transactionsTable"></tbody></table></div>
+      <div id="emptyTransactions" class="empty hidden">Nenhum lançamento encontrado.</div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-relatorio">
+    <div class="card no-print">
+      <div class="filter-bar" style="grid-template-columns:1fr auto auto">
+        <div class="field"><label for="reportMonth">Mês do relatório</label><input id="reportMonth" type="month" /></div>
+        <button class="btn ghost" id="exportCsvBtn" type="button">Exportar CSV</button>
+        <button class="btn" id="printBtn" type="button">Gerar PDF</button>
+      </div>
+    </div>
+    <div class="card section-space">
+      <div class="print-only"><h1>Controle Financeiro</h1></div>
+      <div class="card-title">
+        <div><h2 id="reportTitle">Relatório mensal</h2><p id="reportSubtitle">Resumo do período selecionado.</p></div>
+      </div>
+      <div class="grid grid-4">
+        <div class="stat success"><div class="label">Receitas</div><div class="value" id="reportIncome">R$ 0,00</div></div>
+        <div class="stat danger"><div class="label">Despesas</div><div class="value" id="reportExpense">R$ 0,00</div></div>
+        <div class="stat"><div class="label">Saldo</div><div class="value" id="reportBalance">R$ 0,00</div></div>
+        <div class="stat"><div class="label">Lançamentos</div><div class="value" id="reportCount">0</div></div>
+      </div>
+      <div class="section-space table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Status</th><th>Valor</th></tr></thead><tbody id="reportTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-config">
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title"><div><h2>Meta mensal</h2><p>Essa meta fica salva no seu usuário no MongoDB.</p></div></div>
+        <div class="field"><label for="monthlyBudget">Meta mensal de despesas</label><input id="monthlyBudget" type="number" min="0" step="0.01" placeholder="Ex: 5000" /></div>
+        <button class="btn" id="saveBudgetBtn" type="button">Salvar meta</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><div><h2>Configuração da API</h2><p>Altere quando publicar o backend.</p></div></div>
+        <div class="field"><label for="apiUrlInputApp">URL da API</label><input id="apiUrlInputApp" type="url" /></div>
+        <button class="btn ghost" id="saveApiUrlBtnApp" type="button">Salvar URL</button>
+        <p class="muted" style="font-size:13px;margin-top:10px">Depois de mudar, talvez seja necessário sair e entrar novamente.</p>
+      </div>
+    </div>
+    <div class="card section-space">
+      <div class="card-title"><div><h2>Importar dados antigos</h2><p>Use para enviar ao MongoDB os lançamentos que estavam salvos no navegador.</p></div></div>
+      <button class="btn ghost" id="syncOldDataBtn2" type="button">Importar dados antigos deste navegador</button>
+      <p class="muted" style="font-size:13px;margin-top:10px">O app procura pelas chaves antigas usadas nas versões em localStorage.</p>
+    </div>
+  </section>
+</div>
+
+<div class="modal" id="confirmModal">
+  <div class="card modal-card">
+    <div class="card-title"><div><h2 id="confirmTitle">Confirmar ação</h2><p id="confirmText">Tem certeza?</p></div></div>
+    <div class="modal-actions"><button class="btn ghost" id="confirmCancel" type="button">Cancelar</button><button class="btn danger" id="confirmOk" type="button">Confirmar</button></div>
+  </div>
+</div>
+<div class="toast" id="toast">Tudo certo!</div>
+
+<script>
+(function(){
+'use strict';
+
+const TOKEN_KEY = 'controleFinanceiro_token';
+const USER_KEY = 'controleFinanceiro_user';
+const API_KEY = 'controleFinanceiro_apiUrl';
+const OLD_KEYS = ['controleFinanceiro_v2_transactions','controleGastos_lancamentos'];
+const OLD_SETTINGS_KEY = 'controleFinanceiro_v2_settings';
+const OLD_META_KEY = 'controleGastos_meta';
+
+const expenseCategories = ['Alimentação','Transporte','Contas','Moradia','Fornecedores','Salários','Marketing','Impostos','Saúde','Educação','Lazer','Outros'];
+const incomeCategories = ['Salário','Vendas','Serviços','Freelancer','Investimentos','Reembolso','Outros'];
+
+let token = localStorage.getItem(TOKEN_KEY);
+let currentUser = readJSON(USER_KEY);
+let transactions = [];
+let summary = null;
+let editingId = null;
+let confirmAction = null;
+let selectedMonth = new Date().toISOString().slice(0,7);
+
+const $ = (id) => document.getElementById(id);
+const brl = (value) => Number(value || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+const todayISO = () => new Date().toISOString().slice(0,10);
+const currentMonthKey = () => new Date().toISOString().slice(0,7);
+const formatDate = (dateLike) => {
+  const date = String(dateLike || '').slice(0,10);
+  if(!date) return '—';
+  const [y,m,d] = date.split('-');
+  return `${d}/${m}/${y}`;
+};
+const monthName = (key) => {
+  const [year, month] = String(key).split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString('pt-BR', {month:'long', year:'numeric'}).replace(/^./, c => c.toUpperCase());
+};
+const escapeHtml = (str) => {
+  const div = document.createElement('div');
+  div.textContent = String(str ?? '');
+  return div.innerHTML;
+};
+
+function readJSON(key){
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+
+function getApiUrl(){
+  return (localStorage.getItem(API_KEY) || (window.APP_CONFIG && window.APP_CONFIG.API_URL) || 'http://localhost:3000/api').replace(/\/$/, '');
+}
+
+async function api(path, options = {}){
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if(token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(`${getApiUrl()}${path}`, { ...options, headers });
+  if(response.status === 204) return null;
+
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await response.json() : await response.text();
+
+  if(!response.ok){
+    const message = data && data.message ? data.message : 'Erro ao comunicar com o servidor.';
+    if(response.status === 401) logout(false);
+    throw new Error(message);
+  }
+  return data;
+}
+
+function showToast(message){
+  const toast = $('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+function setLoading(button, loading){
+  if(!button) return;
+  button.disabled = loading;
+  if(loading){ button.dataset.oldText = button.textContent; button.textContent = 'Aguarde...'; }
+  else if(button.dataset.oldText){ button.textContent = button.dataset.oldText; }
+}
+
+function buildQuery(extra = {}){
+  const params = new URLSearchParams();
+  Object.entries(extra).forEach(([key,value]) => {
+    if(value !== undefined && value !== null && value !== '') params.set(key, value);
+  });
+  const qs = params.toString();
+  return qs ? `?${qs}` : '';
+}
+
+function showAuth(){
+  $('authView').classList.remove('hidden');
+  $('appView').classList.add('hidden');
+  $('apiUrlInput').value = getApiUrl();
+}
+function showApp(){
+  $('authView').classList.add('hidden');
+  $('appView').classList.remove('hidden');
+  $('userChip').textContent = currentUser ? `${currentUser.name} • ${currentUser.email}` : 'Usuário';
+  $('monthlyBudget').value = currentUser && currentUser.monthlyBudget ? currentUser.monthlyBudget : '';
+  $('apiUrlInputApp').value = getApiUrl();
+}
+
+async function bootstrap(){
+  setupEvents();
+  setDefaultValues();
+  populateCategories();
+
+  if(!token){ showAuth(); return; }
+
+  try{
+    const data = await api('/auth/me');
+    currentUser = data.user;
+    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+    showApp();
+    await refreshAll();
+  }catch(error){
+    showToast(error.message);
+    showAuth();
+  }
+}
+
+function setupEvents(){
+  $('loginTab').addEventListener('click', () => switchAuth('login'));
+  $('registerTab').addEventListener('click', () => switchAuth('register'));
+  $('loginForm').addEventListener('submit', handleLogin);
+  $('registerForm').addEventListener('submit', handleRegister);
+  $('saveApiUrlBtn').addEventListener('click', () => saveApiUrl($('apiUrlInput').value));
+  $('saveApiUrlBtnApp').addEventListener('click', () => saveApiUrl($('apiUrlInputApp').value));
+  $('logoutBtn').addEventListener('click', () => logout(true));
+
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setScreen(btn.dataset.tab));
+  });
+
+  $('type').addEventListener('change', populateCategories);
+  $('transactionForm').addEventListener('submit', handleSaveTransaction);
+  $('cancelEditBtn').addEventListener('click', cancelEdit);
+  $('clearFiltersBtn').addEventListener('click', clearFilters);
+  ['filterMonth','filterType','filterCategory','filterStatus'].forEach((id) => $(id).addEventListener('change', refreshTransactions));
+  $('filterSearch').addEventListener('input', debounce(refreshTransactions, 350));
+  $('reportMonth').addEventListener('change', async () => { selectedMonth = $('reportMonth').value || currentMonthKey(); $('filterMonth').value = selectedMonth; await refreshAll(); });
+  $('filterMonth').addEventListener('change', async () => { selectedMonth = $('filterMonth').value || currentMonthKey(); $('reportMonth').value = selectedMonth; await refreshAll(); });
+  $('printBtn').addEventListener('click', () => window.print());
+  $('exportCsvBtn').addEventListener('click', exportCsv);
+  $('saveBudgetBtn').addEventListener('click', saveBudget);
+  $('syncOldDataBtn').addEventListener('click', importOldData);
+  $('syncOldDataBtn2').addEventListener('click', importOldData);
+  $('confirmCancel').addEventListener('click', closeConfirm);
+  $('confirmOk').addEventListener('click', async () => { if(confirmAction) await confirmAction(); closeConfirm(); });
+}
+
+function setDefaultValues(){
+  $('date').value = todayISO();
+  $('filterMonth').value = selectedMonth;
+  $('reportMonth').value = selectedMonth;
+}
+
+function switchAuth(mode){
+  const isLogin = mode === 'login';
+  $('loginTab').classList.toggle('active', isLogin);
+  $('registerTab').classList.toggle('active', !isLogin);
+  $('loginForm').classList.toggle('hidden', !isLogin);
+  $('registerForm').classList.toggle('hidden', isLogin);
+}
+
+function saveApiUrl(value){
+  const clean = String(value || '').trim().replace(/\/$/, '');
+  if(!clean){ showToast('Informe a URL da API.'); return; }
+  localStorage.setItem(API_KEY, clean);
+  $('apiUrlInput').value = clean;
+  $('apiUrlInputApp').value = clean;
+  showToast('URL da API salva.');
+}
+
+async function handleLogin(event){
+  event.preventDefault();
+  const button = event.submitter;
+  setLoading(button, true);
+  try{
+    const data = await api('/auth/login', {
+      method:'POST',
+      body: JSON.stringify({ email: $('loginEmail').value.trim(), password: $('loginPassword').value })
+    });
+    token = data.token;
+    currentUser = data.user;
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+    showApp();
+    await refreshAll();
+    showToast('Login realizado com sucesso.');
+  }catch(error){ showToast(error.message); }
+  finally{ setLoading(button, false); }
+}
+
+async function handleRegister(event){
+  event.preventDefault();
+  const button = event.submitter;
+  setLoading(button, true);
+  try{
+    const data = await api('/auth/register', {
+      method:'POST',
+      body: JSON.stringify({ name: $('registerName').value.trim(), email: $('registerEmail').value.trim(), password: $('registerPassword').value })
+    });
+    token = data.token;
+    currentUser = data.user;
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+    showApp();
+    await refreshAll();
+    showToast('Conta criada com sucesso.');
+  }catch(error){ showToast(error.message); }
+  finally{ setLoading(button, false); }
+}
+
+function logout(showMessage){
+  token = null;
+  currentUser = null;
+  transactions = [];
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  showAuth();
+  if(showMessage) showToast('Você saiu do app.');
+}
+
+function setScreen(tab){
+  document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
+  document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
+  $(`screen-${tab}`).classList.add('active');
+}
+
+function populateCategories(){
+  const categories = $('type').value === 'income' ? incomeCategories : expenseCategories;
+  $('category').innerHTML = categories.map((cat) => `<option value="${cat}">${cat}</option>`).join('');
+  const allCats = Array.from(new Set([...expenseCategories, ...incomeCategories]));
+  $('filterCategory').innerHTML = '<option value="">Todas</option>' + allCats.map((cat) => `<option value="${cat}">${cat}</option>`).join('');
+}
+
+async function refreshAll(){
+  await Promise.all([refreshTransactions(), refreshSummary()]);
+}
+
+async function refreshTransactions(){
+  if(!token) return;
+  try{
+    const month = $('filterMonth').value || selectedMonth;
+    selectedMonth = month;
+    $('reportMonth').value = month;
+    const query = buildQuery({
+      month,
+      type: $('filterType').value,
+      category: $('filterCategory').value,
+      status: $('filterStatus').value,
+      search: $('filterSearch').value.trim()
+    });
+    const data = await api(`/transactions${query}`);
+    transactions = data.transactions || [];
+    renderTransactions();
+    renderReport();
+  }catch(error){ showToast(error.message); }
+}
+
+async function refreshSummary(){
+  if(!token) return;
+  try{
+    const data = await api(`/transactions/summary${buildQuery({month:selectedMonth})}`);
+    summary = data;
+    renderSummary();
+    renderReport();
+  }catch(error){ showToast(error.message); }
+}
+
+function renderSummary(){
+  const totals = summary && summary.totals ? summary.totals : {income:0, expense:0, balance:0, pending:0, count:0, monthlyBudget:0, budgetUsedPercent:0};
+  $('statIncome').textContent = brl(totals.income);
+  $('statExpense').textContent = brl(totals.expense);
+  $('statBalance').textContent = brl(totals.balance);
+  $('statPending').textContent = brl(totals.pending);
+  $('statBalance').parentElement.classList.toggle('success', totals.balance >= 0);
+  $('statBalance').parentElement.classList.toggle('danger', totals.balance < 0);
+
+  const percent = totals.budgetUsedPercent || 0;
+  const budget = totals.monthlyBudget || 0;
+  const progress = $('budgetProgress');
+  progress.classList.remove('warn','bad');
+  if(percent >= 100) progress.classList.add('bad');
+  else if(percent >= 80) progress.classList.add('warn');
+  $('budgetBar').style.width = `${Math.min(percent, 100)}%`;
+  $('budgetText').textContent = budget > 0 ? `${percent.toFixed(0)}% da meta de ${brl(budget)} usada em despesas.` : 'Defina uma meta mensal nas configurações.';
+
+  const health = $('healthBox');
+  health.classList.remove('ok','warn','bad');
+  if(!budget){
+    $('healthTitle').textContent = 'Defina uma meta mensal';
+    $('healthText').textContent = 'Com uma meta cadastrada, o app mede automaticamente sua saúde financeira.';
+    health.querySelector('.icon').textContent = '⚖️';
+  }else if(percent < 80){
+    health.classList.add('ok');
+    $('healthTitle').textContent = 'Saúde financeira saudável';
+    $('healthText').textContent = `Você está dentro da meta. Despesas do mês: ${brl(totals.expense)}.`;
+    health.querySelector('.icon').textContent = '✅';
+  }else if(percent < 100){
+    health.classList.add('warn');
+    $('healthTitle').textContent = 'Atenção: perto do limite';
+    $('healthText').textContent = `Você já usou ${percent.toFixed(0)}% da meta. Revise gastos não essenciais.`;
+    health.querySelector('.icon').textContent = '⚠️';
+  }else{
+    health.classList.add('bad');
+    $('healthTitle').textContent = 'Meta mensal ultrapassada';
+    $('healthText').textContent = `Você ultrapassou a meta em ${brl(totals.expense - budget)}.`;
+    health.querySelector('.icon').textContent = '🚨';
+  }
+
+  const top = summary && Array.isArray(summary.topExpenses) ? summary.topExpenses : [];
+  $('topExpensesList').innerHTML = top.length ? top.map((item, index) => `
+    <li><div><strong>${index + 1}. ${escapeHtml(item.description)}</strong><small>${formatDate(item.date)} • ${escapeHtml(item.category)}</small></div><strong class="amount-expense">${brl(item.amount)}</strong></li>
+  `).join('') : '<li class="empty">Nenhuma despesa encontrada.</li>';
+}
+
+function renderTransactions(){
+  const tbody = $('transactionsTable');
+  $('emptyTransactions').classList.toggle('hidden', transactions.length > 0);
+  tbody.innerHTML = transactions.map((item) => `
+    <tr>
+      <td>${formatDate(item.date)}</td>
+      <td>${escapeHtml(item.description)}</td>
+      <td><span class="tag ${item.type}">${item.type === 'income' ? 'Receita' : 'Despesa'}</span></td>
+      <td>${escapeHtml(item.category)}</td>
+      <td><span class="tag ${item.status === 'pending' ? 'pending' : ''}">${item.status === 'paid' ? 'Pago' : 'Pendente'}</span></td>
+      <td class="${item.type === 'income' ? 'amount-income' : 'amount-expense'}">${item.type === 'income' ? '+' : '-'} ${brl(item.amount)}</td>
+      <td class="no-print table-actions"><button class="btn ghost small" data-edit="${item._id}" type="button">Editar</button> <button class="btn danger small" data-delete="${item._id}" type="button">Excluir</button></td>
+    </tr>
+  `).join('');
+
+  tbody.querySelectorAll('[data-edit]').forEach((btn) => btn.addEventListener('click', () => startEdit(btn.dataset.edit)));
+  tbody.querySelectorAll('[data-delete]').forEach((btn) => btn.addEventListener('click', () => askDelete(btn.dataset.delete)));
+}
+
+function renderReport(){
+  const totals = summary && summary.totals ? summary.totals : {income:0, expense:0, balance:0, count:0};
+  $('reportTitle').textContent = `Relatório de ${monthName(selectedMonth)}`;
+  $('reportSubtitle').textContent = `Gerado em ${new Date().toLocaleDateString('pt-BR')}.`;
+  $('reportIncome').textContent = brl(totals.income);
+  $('reportExpense').textContent = brl(totals.expense);
+  $('reportBalance').textContent = brl(totals.balance);
+  $('reportCount').textContent = String(totals.count || transactions.length || 0);
+  $('reportTable').innerHTML = transactions.map((item) => `
+    <tr><td>${formatDate(item.date)}</td><td>${escapeHtml(item.description)}</td><td>${item.type === 'income' ? 'Receita' : 'Despesa'}</td><td>${escapeHtml(item.category)}</td><td>${item.status === 'paid' ? 'Pago' : 'Pendente'}</td><td>${item.type === 'income' ? '+' : '-'} ${brl(item.amount)}</td></tr>
+  `).join('');
+}
+
+async function handleSaveTransaction(event){
+  event.preventDefault();
+  const button = $('saveTransactionBtn');
+  setLoading(button, true);
+  try{
+    const payload = {
+      description: $('description').value.trim(),
+      amount: Number($('amount').value),
+      type: $('type').value,
+      category: $('category').value,
+      date: $('date').value,
+      status: $('status').value,
+      notes: $('notes').value.trim()
+    };
+    const path = editingId ? `/transactions/${editingId}` : '/transactions';
+    await api(path, { method: editingId ? 'PUT' : 'POST', body: JSON.stringify(payload) });
+    showToast(editingId ? 'Lançamento atualizado.' : 'Lançamento salvo.');
+    cancelEdit();
+    await refreshAll();
+  }catch(error){ showToast(error.message); }
+  finally{ setLoading(button, false); }
+}
+
+function startEdit(id){
+  const item = transactions.find((entry) => entry._id === id);
+  if(!item) return;
+  editingId = id;
+  $('formTitle').textContent = 'Editar lançamento';
+  $('description').value = item.description;
+  $('amount').value = item.amount;
+  $('type').value = item.type;
+  populateCategories();
+  $('category').value = item.category;
+  $('date').value = String(item.date).slice(0,10);
+  $('status').value = item.status;
+  $('notes').value = item.notes || '';
+  $('saveTransactionBtn').textContent = 'Atualizar lançamento';
+  $('cancelEditBtn').classList.remove('hidden');
+  setScreen('lancamentos');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function cancelEdit(){
+  editingId = null;
+  $('formTitle').textContent = 'Novo lançamento';
+  $('transactionForm').reset();
+  $('type').value = 'expense';
+  populateCategories();
+  $('date').value = todayISO();
+  $('status').value = 'paid';
+  $('saveTransactionBtn').textContent = 'Salvar lançamento';
+  $('cancelEditBtn').classList.add('hidden');
+}
+
+function askDelete(id){
+  const item = transactions.find((entry) => entry._id === id);
+  $('confirmTitle').textContent = 'Excluir lançamento';
+  $('confirmText').textContent = item ? `Deseja excluir "${item.description}"?` : 'Deseja excluir este lançamento?';
+  confirmAction = async () => {
+    try{
+      await api(`/transactions/${id}`, { method:'DELETE' });
+      showToast('Lançamento excluído.');
+      await refreshAll();
+    }catch(error){ showToast(error.message); }
+  };
+  $('confirmModal').classList.add('show');
+}
+function closeConfirm(){ $('confirmModal').classList.remove('show'); confirmAction = null; }
+
+function clearFilters(){
+  $('filterMonth').value = currentMonthKey();
+  $('reportMonth').value = currentMonthKey();
+  selectedMonth = currentMonthKey();
+  $('filterType').value = '';
+  $('filterCategory').value = '';
+  $('filterStatus').value = '';
+  $('filterSearch').value = '';
+  refreshAll();
+}
+
+async function saveBudget(){
+  const button = $('saveBudgetBtn');
+  setLoading(button, true);
+  try{
+    const monthlyBudget = Number($('monthlyBudget').value || 0);
+    const data = await api('/auth/me/settings', { method:'PUT', body: JSON.stringify({ monthlyBudget }) });
+    currentUser = data.user;
+    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+    showToast('Meta mensal salva.');
+    await refreshSummary();
+  }catch(error){ showToast(error.message); }
+  finally{ setLoading(button, false); }
+}
+
+async function exportCsv(){
+  try{
+    const url = `${getApiUrl()}/transactions/export${buildQuery({ month:selectedMonth, type:$('filterType').value, category:$('filterCategory').value, status:$('filterStatus').value, search:$('filterSearch').value.trim() })}`;
+    const response = await fetch(url, { headers:{ Authorization:`Bearer ${token}` } });
+    if(!response.ok) throw new Error('Não foi possível exportar CSV.');
+    const blob = await response.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `relatorio-${selectedMonth}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }catch(error){ showToast(error.message); }
+}
+
+async function importOldData(){
+  if(!token){ showToast('Faça login antes de importar.'); return; }
+  const oldItems = [];
+  for(const key of OLD_KEYS){
+    const list = readJSON(key);
+    if(Array.isArray(list)) oldItems.push(...list);
+  }
+  if(!oldItems.length){ showToast('Nenhum dado antigo encontrado neste navegador.'); return; }
+  const mapped = oldItems.map((item) => ({
+    type: item.type || (item.tipo === 'receita' ? 'income' : 'expense'),
+    description: item.description || item.descricao || 'Lançamento importado',
+    amount: Number(item.amount || item.valor || 0),
+    category: item.category || item.categoria || 'Outros',
+    status: item.status || 'paid',
+    date: String(item.date || item.data || todayISO()).slice(0,10),
+    notes: 'Importado do armazenamento local'
+  })).filter((item) => item.amount > 0 && item.description);
+  if(!mapped.length){ showToast('Não encontrei lançamentos válidos para importar.'); return; }
+
+  $('confirmTitle').textContent = 'Importar dados antigos';
+  $('confirmText').textContent = `Foram encontrados ${mapped.length} lançamentos. Deseja enviar esses dados para o MongoDB?`;
+  confirmAction = async () => {
+    try{
+      for(const item of mapped){ await api('/transactions', { method:'POST', body: JSON.stringify(item) }); }
+      await importOldBudget();
+      showToast(`${mapped.length} lançamentos importados com sucesso.`);
+      await refreshAll();
+    }catch(error){ showToast(error.message); }
+  };
+  $('confirmModal').classList.add('show');
+}
+
+async function importOldBudget(){
+  let budget = 0;
+  const oldSettings = readJSON(OLD_SETTINGS_KEY);
+  if(oldSettings && Number(oldSettings.budget) > 0) budget = Number(oldSettings.budget);
+  const oldMeta = readJSON(OLD_META_KEY);
+  if(Number(oldMeta) > 0) budget = Number(oldMeta);
+  if(budget > 0){
+    const data = await api('/auth/me/settings', { method:'PUT', body: JSON.stringify({ monthlyBudget: budget }) });
+    currentUser = data.user;
+    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+    $('monthlyBudget').value = budget;
+  }
+}
+
+function debounce(fn, wait){
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), wait); };
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+}
+
+bootstrap();
+})();
+</script>
+</body>
+</html>
