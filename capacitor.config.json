@@ -1,6 +1,0 @@
-{
-  "appId": "br.com.controlefinanceiro.app",
-  "appName": "Controle Financeiro",
-  "webDir": "frontend/www",
-  "bundledWebRuntime": false
-}

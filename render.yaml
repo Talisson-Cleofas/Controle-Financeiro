@@ -1,20 +1,33 @@
 services:
   - type: web
-    name: controle-financeiro-api
-    env: node
-    rootDir: backend
-    buildCommand: npm install
+    name: controle-financeiro-saas-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
     startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-      - key: CLIENT_URL
-        sync: false
-      - key: MONGO_URI
+      - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
         sync: false
-      - key: JWT_EXPIRES_IN
-        value: 7d
+      - key: BACKEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TRIAL_DAYS
+        value: 3
+      - key: PLAN_MONTHLY_PRICE
+        value: 19.90
+      - key: PLAN_SEMIANNUAL_PRICE
+        value: 99.90
+      - key: PLAN_YEARLY_PRICE
+        value: 179.90
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_SECRET
+        sync: false

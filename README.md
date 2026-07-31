@@ -1,232 +1,120 @@
-# Controle Financeiro Profissional — Web + Mobile + MongoDB
+# Controle Financeiro SaaS 2.0
 
-Este projeto transforma o app de controle financeiro em uma aplicação profissional com:
+Versão comercial do Controle Financeiro v10, preservando o painel, planejamento, contas, gráficos, relatórios, backup e PWA. A camada SaaS adiciona contas de usuário, sincronização no MongoDB, controle de acesso, teste grátis e cobrança pelo Mercado Pago.
 
-- Frontend PWA instalável no celular.
-- Backend Node.js + Express.
-- MongoDB/MongoDB Atlas como banco de dados.
-- Cadastro e login de usuários.
-- Senhas criptografadas com bcrypt.
-- Autenticação com JWT.
-- Dados privados por usuário.
-- CRUD completo de receitas e despesas.
-- Relatório mensal, impressão/PDF e exportação CSV.
-- Base pronta para empacotar como Android/iOS com Capacitor.
+## Oferta comercial
 
-## Estrutura
+| Plano | Duração | Valor padrão |
+|---|---:|---:|
+| Mensal | 30 dias | R$ 19,90 |
+| Semestral | 180 dias | R$ 99,90 |
+| Anual | 365 dias | R$ 179,90 |
+| Teste | 3 dias | Grátis, sem cartão |
 
-```txt
-controle_financeiro_mongodb/
-├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── middlewares/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   └── server.js
-│   ├── .env.example
-│   └── package.json
-│
-├── frontend/
-│   └── www/
-│       ├── index.html
-│       ├── config.js
-│       ├── manifest.webmanifest
-│       ├── service-worker.js
-│       └── assets/icons/
-│
-├── capacitor.config.json
-├── package.json
-├── render.yaml
-└── README.md
-```
+Os valores são configuráveis por variáveis de ambiente. O backend é a fonte oficial dos preços exibidos na página de vendas.
 
----
+## Arquitetura
 
-## 1. Configurar o MongoDB Atlas
+- Frontend estático/PWA em `public/`, compatível com Vercel.
+- API Node.js 20+, Express 5 e MongoDB Atlas em `src/`, compatível com Render.
+- JWT para autenticação e bcrypt para senha.
+- Mercado Pago para PIX e checkout com cartão.
+- Webhook assinado e processamento idempotente de pagamentos.
+- Sincronização com revisão otimista para evitar sobrescrita silenciosa entre dispositivos.
+- Painel administrativo para clientes, pagamentos e ativações manuais.
 
-Crie um cluster no MongoDB Atlas ou use MongoDB local.
+## Desenvolvimento local
 
-Você vai precisar de uma string parecida com esta:
-
-```txt
-mongodb+srv://USUARIO:SENHA@cluster0.xxxxx.mongodb.net/controle_financeiro?retryWrites=true&w=majority
-```
-
-Nunca coloque essa string dentro do frontend. Ela deve ficar somente no backend, no arquivo `.env` ou nas variáveis de ambiente da hospedagem.
-
----
-
-## 2. Rodar o backend localmente
-
-Entre na pasta do backend:
+Pré-requisitos: Node.js 20+ e MongoDB.
 
 ```bash
-cd backend
 npm install
 cp .env.example .env
+npm start
 ```
 
-Edite o arquivo `.env`:
+Acesse `http://localhost:3000`. Nunca versione o arquivo `.env`.
 
-```env
-PORT=3000
-CLIENT_URL=http://localhost:5500
-MONGO_URI=sua_string_do_mongodb
-JWT_SECRET=uma_chave_grande_e_segura
-JWT_EXPIRES_IN=7d
-NODE_ENV=development
-```
-
-Depois rode:
-
-```bash
-npm run dev
-```
-
-Teste no navegador:
-
-```txt
-http://localhost:3000/api/health
-```
-
-Se estiver funcionando, deve retornar um JSON com `status: "ok"`.
-
----
-
-## 3. Rodar o frontend localmente
-
-O frontend está em:
-
-```txt
-frontend/www
-```
-
-Abra o arquivo:
-
-```txt
-frontend/www/config.js
-```
-
-Em desenvolvimento, deixe assim:
-
-```js
-window.APP_CONFIG = {
-  API_URL: 'http://localhost:3000/api'
-};
-```
-
-Depois abra o `index.html` com uma extensão tipo **Live Server** do VS Code, ou publique a pasta `frontend/www` em qualquer hospedagem estática.
-
----
-
-## 4. Publicar o backend
-
-Você pode publicar em serviços como Render, Railway, VPS, Hostinger Node.js ou outro ambiente Node.
-
-Variáveis obrigatórias na hospedagem:
+## Variáveis obrigatórias em produção
 
 ```env
 NODE_ENV=production
-PORT=10000
-CLIENT_URL=https://seu-frontend.com
-MONGO_URI=sua_string_do_mongodb_atlas
-JWT_SECRET=uma_chave_grande_e_segura
-JWT_EXPIRES_IN=7d
+MONGODB_URI=
+JWT_SECRET=
+FRONTEND_URL=https://SEU-FRONTEND.vercel.app
+BACKEND_URL=https://SUA-API.onrender.com
+CORS_ORIGINS=https://SEU-FRONTEND.vercel.app
+TRIAL_DAYS=3
+PLAN_MONTHLY_PRICE=19.90
+PLAN_SEMIANNUAL_PRICE=99.90
+PLAN_YEARLY_PRICE=179.90
+MERCADO_PAGO_ACCESS_TOKEN=
+MERCADO_PAGO_WEBHOOK_SECRET=
 ```
 
-O arquivo `render.yaml` já está incluído como base para deploy no Render.
+SMTP é opcional durante desenvolvimento, mas necessário para recuperação de senha e mensagens comerciais em produção. Consulte `.env.example`.
 
----
+## Render — backend
 
-## 5. Publicar o frontend web/PWA
+O `render.yaml` contém a base do serviço. Configure no painel os segredos e URLs reais. O health check é:
 
-Publique a pasta:
-
-```txt
-frontend/www
+```text
+/api/health
 ```
 
-Antes de publicar, edite:
+Depois de publicar, valide que retorna `ok: true` e versão `2.0.0`.
 
-```txt
-frontend/www/config.js
+## Vercel — frontend
+
+1. Importe o repositório.
+2. Use `public` como diretório de saída estática.
+3. Copie `public/config.production.example.js` para `public/config.js`.
+4. Substitua `SUA-API` pela URL real do Render.
+5. Não coloque credenciais do MongoDB, SMTP ou Mercado Pago no frontend.
+
+## Mercado Pago
+
+Configure o webhook de pagamentos como:
+
+```text
+https://SUA-API.onrender.com/api/billing/webhook
 ```
 
-E coloque a URL real do backend:
+Ative notificações de pagamentos e guarde a assinatura secreta em `MERCADO_PAGO_WEBHOOK_SECRET`. Teste primeiro com credenciais de teste.
 
-```js
-window.APP_CONFIG = {
-  API_URL: 'https://sua-api-publicada.com/api'
-};
-```
+Fluxos críticos a validar antes da produção:
 
-Depois de publicado, o usuário pode acessar pelo navegador e instalar como aplicativo:
+- cadastro inicia exatamente 3 dias de teste;
+- teste expirado bloqueia `/api/data` sem apagar dados;
+- PIX pendente exibe QR Code e copia e cola;
+- webhook aprovado ativa o plano uma única vez;
+- cartão aprovado retorna ao frontend e libera o acesso;
+- valor, moeda e plano do pagamento correspondem à oferta;
+- renovação antes do vencimento preserva o período restante.
 
-- Android: Chrome > Instalar app ou Adicionar à tela inicial.
-- iPhone: Safari > Compartilhar > Adicionar à Tela de Início.
+## Administração
 
----
-
-## 6. Gerar app Android/iOS com Capacitor
-
-Na pasta raiz do projeto:
+Crie ou atualize o administrador somente em ambiente seguro:
 
 ```bash
-npm install
-npm run mobile:add:android
-npm run mobile:copy
-npm run mobile:open:android
+npm run seed:admin
 ```
 
-Para iOS, use macOS com Xcode:
+Defina `ADMIN_EMAIL` e `ADMIN_PASSWORD` no ambiente e remova `ADMIN_PASSWORD` após executar o seed.
+
+## Verificações
 
 ```bash
-npm run mobile:add:ios
-npm run mobile:copy
-npm run mobile:open:ios
+npm test
+node --check src/server.js
+node --check src/routes/billing.js
 ```
 
-Antes de empacotar, confira se o `frontend/www/config.js` aponta para a API publicada.
+## Pendências obrigatórias antes da venda pública
 
----
-
-## Rotas principais da API
-
-### Autenticação
-
-```txt
-POST /api/auth/register
-POST /api/auth/login
-GET  /api/auth/me
-PUT  /api/auth/me/settings
-```
-
-### Lançamentos
-
-```txt
-GET    /api/transactions?month=2026-07
-GET    /api/transactions/summary?month=2026-07
-GET    /api/transactions/export?month=2026-07
-POST   /api/transactions
-PUT    /api/transactions/:id
-DELETE /api/transactions/:id
-```
-
----
-
-## Segurança aplicada
-
-- O frontend não conhece a senha do MongoDB.
-- O backend protege as rotas com JWT.
-- Cada lançamento possui o campo `user`, ligado ao usuário logado.
-- As consultas sempre filtram por `user: req.user._id`.
-- A senha do usuário é salva como hash, não como texto puro.
-- O service worker não faz cache das rotas `/api/`, evitando armazenar dados privados da API.
-
----
-
-## Observação importante
-
-Na versão anterior, os dados ficavam no navegador usando `localStorage`. Nesta versão, os dados ficam no MongoDB, vinculados ao usuário logado. O app também tem um botão para importar dados antigos do navegador e enviá-los para o MongoDB.
+- preencher dados do responsável legal, contato de suporte, Termos de Uso e Política de Privacidade;
+- configurar SMTP de produção;
+- configurar credenciais e webhook do Mercado Pago;
+- validar backup e restauração do MongoDB Atlas;
+- executar compra completa com credenciais de teste;
+- ativar monitoramento e alertas do Render e da Vercel.
