@@ -18,13 +18,16 @@ if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI não configurado.');
 if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET não configurado.');
 if (isProduction && process.env.JWT_SECRET.length < 32) throw new Error('JWT_SECRET deve ter ao menos 32 caracteres em produção.');
 
+const mongoDbName = String(process.env.MONGODB_DB_NAME || '').trim();
+if (isProduction && !mongoDbName) throw new Error('MONGODB_DB_NAME não configurado.');
+
 const allowedOrigins = String(process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
 if (isProduction && !allowedOrigins.length) throw new Error('CORS_ORIGINS ou FRONTEND_URL deve ser configurado em produção.');
 
-await mongoose.connect(process.env.MONGODB_URI);
+await mongoose.connect(process.env.MONGODB_URI, mongoDbName ? { dbName: mongoDbName } : {});
 
 const app = express();
 app.disable('x-powered-by');
