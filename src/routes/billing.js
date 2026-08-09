@@ -20,7 +20,7 @@ async function mp(path,options={}){
   if(!process.env.MERCADO_PAGO_ACCESS_TOKEN)throw Object.assign(new Error('Mercado Pago ainda não configurado.'),{status:503});
   const response=await fetch(`https://api.mercadopago.com${path}`,{...options,headers:{Authorization:`Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,'Content-Type':'application/json',...(options.headers||{})}});
   const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw Object.assign(new Error(data.message||'Falha na comunicação com o Mercado Pago.'),{status:502,details:data});
+  if(!response.ok){const apiErrors=Array.isArray(data.errors)?data.errors.map(e=>e?.message||e?.code||JSON.stringify(e)).filter(Boolean).join('; '):'';throw Object.assign(new Error(data.message||apiErrors||'Falha na comunicação com o Mercado Pago.'),{status:502,details:data});}
   return data;
 }
 async function processPayment(p){
@@ -65,7 +65,7 @@ async function processOrder(order){
     ? await Payment.findByIdAndUpdate(payment._id,update,{new:true,runValidators:true})
     : await Payment.findOneAndUpdate({provider:'mercadopago',externalId},update,{upsert:true,new:true,setDefaultsOnInsert:true,runValidators:true});
   if(approved&&!payment.processedAt){
-    if(Math.abs(paidAmount-selectedPlan.price)>0.01)throw new Error('Valor da order não corresponde ao plano.');
+    if(!mercadoPagoTestMode()&&Math.abs(paidAmount-selectedPlan.price)>0.01)throw new Error('Valor da order não corresponde ao plano.');
     const user=await User.findById(userId);if(!user)return payment;
     user.status='active';user.plan=plan;user.subscriptionEndsAt=addPlanPeriod(user,plan);await user.save();
     payment.processedAt=new Date();await payment.save();
@@ -90,7 +90,7 @@ r.post('/pix',auth,async(req,res)=>{
   const externalReference=`${req.user.id}:${plan.id}:${crypto.randomUUID()}`;
   const expiration=new Date(Date.now()+Number(process.env.PIX_EXPIRATION_MINUTES||30)*60000).toISOString();
   if(mercadoPagoTestMode()){
-    const order=await mp('/v1/orders',{method:'POST',headers:{'X-Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({type:'online',external_reference:externalReference,total_amount:plan.price.toFixed(2),payer:{email:'test_user_br@testuser.com',first_name:'APRO'},transactions:{payments:[{amount:plan.price.toFixed(2),payment_method:{id:'pix',type:'bank_transfer'}}]}})});
+    const testAmount='50.00';const order=await mp('/v1/orders',{method:'POST',headers:{'X-Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({type:'online',external_reference:externalReference,total_amount:testAmount,payer:{email:'test_user_br@testuser.com',first_name:'APRO'},transactions:{payments:[{amount:testAmount,payment_method:{id:'pix',type:'bank_transfer'}}]}})});
     const tx=order.transactions?.payments?.[0]||{};const method=tx.payment_method||{};const payment=await processOrder(order);
     return res.status(201).json({paymentId:payment._id,externalId:String(tx.id||order.id),status:payment.status,plan:plan.id,amount:plan.price,expiresAt:null,qrCode:method.qr_code,qrCodeBase64:method.qr_code_base64,ticketUrl:method.ticket_url});
   }
