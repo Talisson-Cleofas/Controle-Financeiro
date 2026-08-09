@@ -28,7 +28,7 @@ export function validWebhookSignature({ secret, signature, requestId, dataId }) 
   if (!ts || !v1 || !/^[a-f\d]{64}$/i.test(v1)) return false;
 
   const manifest = webhookManifest({ dataId, requestId, timestamp: ts });
-  const expected = crypto.createHmac('sha256', secret).update(manifest).digest();
+  const expected = crypto.createHmac('sha256', String(secret).trim()).update(manifest).digest();
   const received = Buffer.from(v1, 'hex');
   return expected.length === received.length && crypto.timingSafeEqual(expected, received);
 }
