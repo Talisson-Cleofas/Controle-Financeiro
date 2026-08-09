@@ -9,6 +9,7 @@ import {getPlan, listPlans} from '../services/plans.js';
 import {sendMail} from '../services/mail.js';
 
 const r=Router();
+const mercadoPagoTestMode=()=>String(process.env.MERCADO_PAGO_ENV||'production').toLowerCase()==='test';
 const cleanCpf=v=>String(v||'').replace(/\D/g,'');
 function validCpf(cpf){
   cpf=cleanCpf(cpf); if(cpf.length!==11||/^(\d)\1+$/.test(cpf))return false;
@@ -47,11 +48,39 @@ async function processPayment(p){
   }
   return payment;
 }
+async function processOrder(order){
+  const [userId,plan]=String(order.external_reference||'').split(':');
+  const selectedPlan=getPlan(plan);
+  if(!userId||!selectedPlan)return null;
+  const transaction=order.transactions?.payments?.[0]||{};
+  const externalId=String(transaction.id||order.id);
+  const existingFilters=[{provider:'mercadopago',externalId},{provider:'mercadopago',preferenceId:String(order.id)}];
+  let payment=await Payment.findOne({$or:existingFilters});
+  const approved=['processed','approved'].includes(String(order.status))||['processed','approved'].includes(String(transaction.status));
+  const status=approved?'approved':(['failed','cancelled','canceled','refunded'].includes(String(order.status))?'rejected':'pending');
+  const method=transaction.payment_method||{};
+  const paidAmount=Number(order.total_amount||transaction.amount||0);
+  const update={$set:{userId,externalId,preferenceId:String(order.id),status,statusDetail:order.status_detail||transaction.status_detail,plan,amount:paidAmount||selectedPlan.price,paidAt:approved?new Date():undefined,paymentMethod:method.id||'pix',qrCode:method.qr_code,qrCodeBase64:method.qr_code_base64,ticketUrl:method.ticket_url,payload:order}};
+  payment=payment
+    ? await Payment.findByIdAndUpdate(payment._id,update,{new:true,runValidators:true})
+    : await Payment.findOneAndUpdate({provider:'mercadopago',externalId},update,{upsert:true,new:true,setDefaultsOnInsert:true,runValidators:true});
+  if(approved&&!payment.processedAt){
+    if(Math.abs(paidAmount-selectedPlan.price)>0.01)throw new Error('Valor da order não corresponde ao plano.');
+    const user=await User.findById(userId);if(!user)return payment;
+    user.status='active';user.plan=plan;user.subscriptionEndsAt=addPlanPeriod(user,plan);await user.save();
+    payment.processedAt=new Date();await payment.save();
+    await sendMail({to:user.email,subject:'Pagamento aprovado — acesso liberado',html:`<h2>Pagamento aprovado</h2><p>Olá, ${user.name}. Seu plano ${selectedPlan.name} foi ativado até ${user.subscriptionEndsAt.toLocaleDateString('pt-BR')}.</p>`});
+  }
+  return payment;
+}
 r.get('/plans',(_,res)=>res.json({trialDays:Number(process.env.TRIAL_DAYS||3),plans:listPlans()}));
 r.get('/payments',auth,async(req,res)=>res.json({payments:await Payment.find({userId:req.user._id}).select('-payload -qrCodeBase64').sort({createdAt:-1}).limit(50)}));
 r.get('/payments/:id/status',auth,async(req,res)=>{
   const payment=await Payment.findOne({_id:req.params.id,userId:req.user._id});if(!payment)return res.status(404).json({error:'Pagamento não encontrado.'});
-  if(payment.externalId&&['pending','in_process'].includes(payment.status))try{await processPayment(await mp(`/v1/payments/${payment.externalId}`));}catch(e){console.error('consulta pagamento',e.message)}
+  if(['pending','in_process'].includes(payment.status))try{
+    if(mercadoPagoTestMode()&&payment.preferenceId?.startsWith('ORD'))await processOrder(await mp(`/v1/orders/${payment.preferenceId}`));
+    else if(payment.externalId)await processPayment(await mp(`/v1/payments/${payment.externalId}`));
+  }catch(e){console.error('consulta pagamento',e.message)}
   const updated=await Payment.findById(payment._id).select('-payload');res.json({payment:updated});
 });
 r.post('/pix',auth,async(req,res)=>{
@@ -60,6 +89,11 @@ r.post('/pix',auth,async(req,res)=>{
   if(!req.user.cpf){req.user.cpf=cpf;await req.user.save();}
   const externalReference=`${req.user.id}:${plan.id}:${crypto.randomUUID()}`;
   const expiration=new Date(Date.now()+Number(process.env.PIX_EXPIRATION_MINUTES||30)*60000).toISOString();
+  if(mercadoPagoTestMode()){
+    const order=await mp('/v1/orders',{method:'POST',headers:{'X-Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({type:'online',external_reference:externalReference,total_amount:plan.price.toFixed(2),payer:{email:'test_user_br@testuser.com',first_name:'APRO'},transactions:{payments:[{amount:plan.price.toFixed(2),payment_method:{id:'pix',type:'bank_transfer'}}]}})});
+    const tx=order.transactions?.payments?.[0]||{};const method=tx.payment_method||{};const payment=await processOrder(order);
+    return res.status(201).json({paymentId:payment._id,externalId:String(tx.id||order.id),status:payment.status,plan:plan.id,amount:plan.price,expiresAt:null,qrCode:method.qr_code,qrCodeBase64:method.qr_code_base64,ticketUrl:method.ticket_url});
+  }
   const p=await mp('/v1/payments',{method:'POST',headers:{'X-Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({transaction_amount:plan.price,description:`Controle Financeiro - Plano ${plan.name}`,payment_method_id:'pix',external_reference:externalReference,notification_url:`${process.env.BACKEND_URL||process.env.APP_URL}/api/billing/webhook`,date_of_expiration:expiration,payer:{email:req.user.email,first_name:req.user.name.split(' ')[0],identification:{type:'CPF',number:cpf}}})});
   const payment=await processPayment(p);res.status(201).json({paymentId:payment._id,externalId:String(p.id),status:p.status,plan:plan.id,amount:plan.price,expiresAt:p.date_of_expiration,qrCode:p.point_of_interaction?.transaction_data?.qr_code,qrCodeBase64:p.point_of_interaction?.transaction_data?.qr_code_base64,ticketUrl:p.point_of_interaction?.transaction_data?.ticket_url});
 });
@@ -71,6 +105,10 @@ r.post('/checkout',auth,async(req,res)=>{
 });
 r.post('/webhook',async(req,res)=>{
   const id=req.body?.data?.id||req.query?.['data.id'];if(!id)return res.sendStatus(200);if(!validWebhookSignature({secret:process.env.MERCADO_PAGO_WEBHOOK_SECRET,signature:req.headers['x-signature'],requestId:req.headers['x-request-id'],dataId:id}))return res.status(401).json({error:'Assinatura do webhook inválida.'});res.sendStatus(200);
-  try{await processPayment(await mp(`/v1/payments/${id}`));}catch(e){console.error('webhook',e);}
+  const topic=String(req.body?.type||req.query?.type||'payment').toLowerCase();
+  try{
+    if(topic==='order'||String(id).startsWith('ORD'))await processOrder(await mp(`/v1/orders/${id}`));
+    else await processPayment(await mp(`/v1/payments/${id}`));
+  }catch(e){console.error('webhook',e);}
 });
 export default r;
