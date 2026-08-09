@@ -11,6 +11,8 @@ services:
         value: production
       - key: MONGODB_URI
         sync: false
+      - key: MONGODB_DB_NAME
+        value: controle_financeiro_v2_staging
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
@@ -27,6 +29,8 @@ services:
         value: 99.90
       - key: PLAN_YEARLY_PRICE
         value: 179.90
+      - key: PIX_EXPIRATION_MINUTES
+        value: 30
       - key: MERCADO_PAGO_ACCESS_TOKEN
         sync: false
       - key: MERCADO_PAGO_WEBHOOK_SECRET
