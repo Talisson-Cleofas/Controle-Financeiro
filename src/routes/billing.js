@@ -49,7 +49,7 @@ async function processPayment(p){
   return payment;
 }
 async function processOrder(order){
-  const [userId,plan]=String(order.external_reference||'').split(':');
+  const orderReference=String(order.external_reference||'');const [userId,plan]=orderReference.includes(':')?orderReference.split(':'):orderReference.split('_');
   const selectedPlan=getPlan(plan);
   if(!userId||!selectedPlan)return null;
   const transaction=order.transactions?.payments?.[0]||{};
@@ -90,7 +90,7 @@ r.post('/pix',auth,async(req,res)=>{
   const externalReference=`${req.user.id}:${plan.id}:${crypto.randomUUID()}`;
   const expiration=new Date(Date.now()+Number(process.env.PIX_EXPIRATION_MINUTES||30)*60000).toISOString();
   if(mercadoPagoTestMode()){
-    const testAmount='50.00';const testReference=`${req.user.id}:${plan.id}:${crypto.randomUUID().slice(0,8)}`;const order=await mp('/v1/orders',{method:'POST',headers:{'X-Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({type:'online',external_reference:testReference,total_amount:testAmount,payer:{email:'test_user_br@testuser.com',first_name:'APRO'},transactions:{payments:[{amount:testAmount,payment_method:{id:'pix',type:'bank_transfer'}}]}})});
+    const testAmount='50.00';const testReference=`${req.user.id}_${plan.id}_${crypto.randomUUID().slice(0,8)}`;const order=await mp('/v1/orders',{method:'POST',headers:{'X-Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({type:'online',external_reference:testReference,total_amount:testAmount,payer:{email:'test_user_br@testuser.com',first_name:'APRO'},transactions:{payments:[{amount:testAmount,payment_method:{id:'pix',type:'bank_transfer'}}]}})});
     const tx=order.transactions?.payments?.[0]||{};const method=tx.payment_method||{};const payment=await processOrder(order);
     return res.status(201).json({paymentId:payment._id,externalId:String(tx.id||order.id),status:payment.status,plan:plan.id,amount:plan.price,expiresAt:null,qrCode:method.qr_code,qrCodeBase64:method.qr_code_base64,ticketUrl:method.ticket_url});
   }
