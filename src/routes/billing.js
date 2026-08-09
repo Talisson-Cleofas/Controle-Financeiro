@@ -1,5 +1,6 @@
 import {Router} from 'express';
 import crypto from 'crypto';
+import {validWebhookSignature} from '../services/mercadopago.js';
 import {auth} from '../middleware/auth.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
@@ -13,16 +14,6 @@ function validCpf(cpf){
   cpf=cleanCpf(cpf); if(cpf.length!==11||/^(\d)\1+$/.test(cpf))return false;
   let sum=0;for(let i=0;i<9;i++)sum+=Number(cpf[i])*(10-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(cpf[9]))return false;
   sum=0;for(let i=0;i<10;i++)sum+=Number(cpf[i])*(11-i);d=(sum*10)%11;if(d===10)d=0;return d===Number(cpf[10]);
-}
-function validSignature(req,dataId){
-  const secret=process.env.MERCADO_PAGO_WEBHOOK_SECRET;
-  if(!secret)return process.env.NODE_ENV!=='production';
-  const xSignature=String(req.headers['x-signature']||''); const xRequestId=String(req.headers['x-request-id']||'');
-  const parts=Object.fromEntries(xSignature.split(',').map(v=>v.split('=').map(x=>x.trim())));
-  if(!parts.ts||!parts.v1)return false;
-  const manifest=`id:${String(dataId).toLowerCase()};request-id:${xRequestId};ts:${parts.ts};`;
-  const expected=crypto.createHmac('sha256',secret).update(manifest).digest('hex');
-  try{return crypto.timingSafeEqual(Buffer.from(expected),Buffer.from(parts.v1));}catch{return false;}
 }
 async function mp(path,options={}){
   if(!process.env.MERCADO_PAGO_ACCESS_TOKEN)throw Object.assign(new Error('Mercado Pago ainda não configurado.'),{status:503});
@@ -79,7 +70,7 @@ r.post('/checkout',auth,async(req,res)=>{
   await Payment.create({userId:req.user._id,preferenceId:data.id,status:'pending',plan:plan.id,amount:plan.price});res.json({checkoutUrl:data.init_point||data.sandbox_init_point,preferenceId:data.id});
 });
 r.post('/webhook',async(req,res)=>{
-  const id=req.body?.data?.id||req.query?.['data.id'];if(!id)return res.sendStatus(200);if(!validSignature(req,id))return res.status(401).json({error:'Assinatura do webhook inválida.'});res.sendStatus(200);
+  const id=req.body?.data?.id||req.query?.['data.id'];if(!id)return res.sendStatus(200);if(!validWebhookSignature({secret:process.env.MERCADO_PAGO_WEBHOOK_SECRET,signature:req.headers['x-signature'],requestId:req.headers['x-request-id'],dataId:id}))return res.status(401).json({error:'Assinatura do webhook inválida.'});res.sendStatus(200);
   try{await processPayment(await mp(`/v1/payments/${id}`));}catch(e){console.error('webhook',e);}
 });
 export default r;
