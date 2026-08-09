@@ -40,6 +40,17 @@ test('aceita assinatura HMAC válida', () => {
   }), true);
 });
 
+test('ignora espaços acidentais ao colar o segredo no ambiente', () => {
+  const manifest = 'id:abc123;request-id:req-1;ts:1704908010;';
+  const v1 = crypto.createHmac('sha256', 'segredo-de-homologacao').update(manifest).digest('hex');
+  assert.equal(validWebhookSignature({
+    secret: '  segredo-de-homologacao  ',
+    signature: `ts=1704908010,v1=${v1}`,
+    requestId: 'req-1',
+    dataId: 'ABC123'
+  }), true);
+});
+
 test('rejeita assinatura adulterada ou segredo ausente', () => {
   const params = {
     secret: 'segredo-de-homologacao',
