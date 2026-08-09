@@ -104,7 +104,7 @@ r.post('/checkout',auth,async(req,res)=>{
   await Payment.create({userId:req.user._id,preferenceId:data.id,status:'pending',plan:plan.id,amount:plan.price});res.json({checkoutUrl:data.init_point||data.sandbox_init_point,preferenceId:data.id});
 });
 r.post('/webhook',async(req,res)=>{
-  const id=req.body?.data?.id||req.query?.['data.id'];if(!id)return res.sendStatus(200);if(!validWebhookSignature({secret:process.env.MERCADO_PAGO_WEBHOOK_SECRET,signature:req.headers['x-signature'],requestId:req.headers['x-request-id'],dataId:id}))return res.status(401).json({error:'Assinatura do webhook inválida.'});res.sendStatus(200);
+  const id=req.query?.['data.id']||req.body?.data?.id;if(!id)return res.sendStatus(200);if(!validWebhookSignature({secret:process.env.MERCADO_PAGO_WEBHOOK_SECRET,signature:req.headers['x-signature'],requestId:req.headers['x-request-id'],dataId:id}))return res.status(401).json({error:'Assinatura do webhook inválida.'});res.sendStatus(200);
   const topic=String(req.body?.type||req.query?.type||'payment').toLowerCase();
   try{
     if(topic==='order'||String(id).startsWith('ORD'))await processOrder(await mp(`/v1/orders/${id}`));
