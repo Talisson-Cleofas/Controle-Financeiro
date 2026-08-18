@@ -179,7 +179,7 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
     <div class="grid grid-4">
       <div class="stat success"><div class="label">Receitas do mês</div><div class="value" id="statIncome">R$ 0,00</div><div class="hint">Entradas registradas</div></div>
       <div class="stat danger"><div class="label">Despesas do mês</div><div class="value" id="statExpense">R$ 0,00</div><div class="hint">Saídas registradas</div></div>
-      <div class="stat"><div class="label">Saldo</div><div class="value" id="statBalance">R$ 0,00</div><div class="hint">Receitas - despesas</div></div>
+      <div class="stat"><div class="label">Saldo confirmado</div><div class="value" id="statBalance">R$ 0,00</div><div class="hint">Somente valores recebidos e pagos</div></div>
       <div class="stat warning"><div class="label">Pendências</div><div class="value" id="statPending">R$ 0,00</div><div class="hint">Itens não pagos</div></div>
     </div>
 
@@ -235,8 +235,8 @@ input,select,textarea{width:100%;border:1px solid var(--border);border-radius:13
           <div class="field">
             <label for="status">Status</label>
             <select id="status">
-              <option value="paid">Pago</option>
               <option value="pending">Pendente</option>
+              <option value="paid">Confirmado (recebido/pago)</option>
             </select>
           </div>
           <div class="field">
@@ -651,12 +651,13 @@ function renderTransactions(){
       <td>${escapeHtml(item.description)}</td>
       <td><span class="tag ${item.type}">${item.type === 'income' ? 'Receita' : 'Despesa'}</span></td>
       <td>${escapeHtml(item.category)}</td>
-      <td><span class="tag ${item.status === 'pending' ? 'pending' : ''}">${item.status === 'paid' ? 'Pago' : 'Pendente'}</span></td>
+      <td><span class="tag ${item.status === 'pending' ? 'pending' : ''}">${item.status === 'paid' ? (item.type === 'income' ? 'Recebido' : 'Pago') : 'Pendente'}</span></td>
       <td class="${item.type === 'income' ? 'amount-income' : 'amount-expense'}">${item.type === 'income' ? '+' : '-'} ${brl(item.amount)}</td>
-      <td class="no-print table-actions"><button class="btn ghost small" data-edit="${item._id}" type="button">Editar</button> <button class="btn danger small" data-delete="${item._id}" type="button">Excluir</button></td>
+      <td class="no-print table-actions">${item.status === 'pending' ? `<button class="btn success small" data-confirm="${item._id}" type="button">Confirmar</button> ` : ''}<button class="btn ghost small" data-edit="${item._id}" type="button">Editar</button> <button class="btn danger small" data-delete="${item._id}" type="button">Excluir</button></td>
     </tr>
   `).join('');
 
+  tbody.querySelectorAll('[data-confirm]').forEach((btn) => btn.addEventListener('click', () => confirmTransaction(btn.dataset.confirm)));
   tbody.querySelectorAll('[data-edit]').forEach((btn) => btn.addEventListener('click', () => startEdit(btn.dataset.edit)));
   tbody.querySelectorAll('[data-delete]').forEach((btn) => btn.addEventListener('click', () => askDelete(btn.dataset.delete)));
 }
@@ -670,7 +671,7 @@ function renderReport(){
   $('reportBalance').textContent = brl(totals.balance);
   $('reportCount').textContent = String(totals.count || transactions.length || 0);
   $('reportTable').innerHTML = transactions.map((item) => `
-    <tr><td>${formatDate(item.date)}</td><td>${escapeHtml(item.description)}</td><td>${item.type === 'income' ? 'Receita' : 'Despesa'}</td><td>${escapeHtml(item.category)}</td><td>${item.status === 'paid' ? 'Pago' : 'Pendente'}</td><td>${item.type === 'income' ? '+' : '-'} ${brl(item.amount)}</td></tr>
+    <tr><td>${formatDate(item.date)}</td><td>${escapeHtml(item.description)}</td><td>${item.type === 'income' ? 'Receita' : 'Despesa'}</td><td>${escapeHtml(item.category)}</td><td>${item.status === 'paid' ? (item.type === 'income' ? 'Recebido' : 'Pago') : 'Pendente'}</td><td>${item.type === 'income' ? '+' : '-'} ${brl(item.amount)}</td></tr>
   `).join('');
 }
 
@@ -723,7 +724,7 @@ function cancelEdit(){
   $('type').value = 'expense';
   populateCategories();
   $('date').value = todayISO();
-  $('status').value = 'paid';
+  $('status').value = 'pending';
   $('saveTransactionBtn').textContent = 'Salvar lançamento';
   $('cancelEditBtn').classList.add('hidden');
 }
@@ -740,6 +741,27 @@ function askDelete(id){
     }catch(error){ showToast(error.message); }
   };
   $('confirmModal').classList.add('show');
+}
+
+async function confirmTransaction(id){
+  const item = transactions.find((entry) => entry._id === id);
+  if(!item) return;
+  try{
+    await api(`/transactions/${id}`, {
+      method:'PUT',
+      body: JSON.stringify({
+        type: item.type,
+        description: item.description,
+        amount: item.amount,
+        category: item.category,
+        status: 'paid',
+        date: String(item.date).slice(0,10),
+        notes: item.notes || ''
+      })
+    });
+    showToast(item.type === 'income' ? 'Recebimento confirmado.' : 'Pagamento confirmado.');
+    await refreshAll();
+  }catch(error){ showToast(error.message); }
 }
 function closeConfirm(){ $('confirmModal').classList.remove('show'); confirmAction = null; }
 

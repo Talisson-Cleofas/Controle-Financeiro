@@ -34,7 +34,7 @@ const transactionSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['paid', 'pending'],
-      default: 'paid'
+      default: 'pending'
     },
     date: {
       type: Date,

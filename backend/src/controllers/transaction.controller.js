@@ -31,7 +31,7 @@ function normalizeBody(body) {
     description: body.description,
     amount: Number(body.amount),
     category: body.category,
-    status: body.status || 'paid',
+    status: body.status || 'pending',
     date: body.date,
     notes: body.notes || ''
   };
@@ -100,11 +100,12 @@ async function getSummary(req, res, next) {
     const totals = transactions.reduce(
       (acc, item) => {
         const value = Number(item.amount || 0);
-        if (item.type === 'income') acc.income += value;
-        if (item.type === 'expense') acc.expense += value;
+        const isConfirmed = item.status === 'paid';
+        if (isConfirmed && item.type === 'income') acc.income += value;
+        if (isConfirmed && item.type === 'expense') acc.expense += value;
         if (item.status === 'pending') acc.pending += value;
         acc.count += 1;
-        acc.byCategory[item.category] = (acc.byCategory[item.category] || 0) + value;
+        if (isConfirmed) acc.byCategory[item.category] = (acc.byCategory[item.category] || 0) + value;
         return acc;
       },
       { income: 0, expense: 0, pending: 0, count: 0, byCategory: {} }
@@ -115,7 +116,7 @@ async function getSummary(req, res, next) {
     totals.budgetUsedPercent = totals.monthlyBudget > 0 ? (totals.expense / totals.monthlyBudget) * 100 : 0;
 
     const topExpenses = transactions
-      .filter((item) => item.type === 'expense')
+      .filter((item) => item.type === 'expense' && item.status === 'paid')
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
 
