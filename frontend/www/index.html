@@ -368,7 +368,16 @@ function readJSON(key){
 }
 
 function getApiUrl(){
-  return (localStorage.getItem(API_KEY) || (window.APP_CONFIG && window.APP_CONFIG.API_URL) || 'http://localhost:3000/api').replace(/\/$/, '');
+  const configuredUrl = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || 'http://localhost:3000/api';
+  const savedUrl = localStorage.getItem(API_KEY);
+  const isLocalUrl = /^http:\/\/(localhost|127\.0\.0\.1)(:\\d+)?(\/|$)/i.test(savedUrl || '');
+
+  if(savedUrl && isLocalUrl && !/^http:\/\/(localhost|127\.0\.0\.1)/i.test(configuredUrl)){
+    localStorage.removeItem(API_KEY);
+    return configuredUrl.replace(/\/$/, '');
+  }
+
+  return (savedUrl || configuredUrl).replace(/\/$/, '');
 }
 
 async function api(path, options = {}){
