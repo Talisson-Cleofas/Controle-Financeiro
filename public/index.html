@@ -2039,13 +2039,15 @@ window.addEventListener('DOMContentLoaded',()=>{
   function walletOptions(){ return wallets().map(w => ({value:w.id, label:w.type === 'credit' ? `💳 ${w.name}` : w.type === 'bank' ? `🏦 ${w.name}` : `👛 ${w.name}`})); }
   function fillWalletSelect(id, selected){ if($(id)) fillSelect($(id), walletOptions(), selected || (wallets()[0] && wallets()[0].id)); }
   function categoryColor(name){ return (settings.categoryColors && settings.categoryColors[name]) || '#5b7cfa'; }
+  function isConfirmed(transaction){ return (transaction.status || 'paid') === 'paid'; }
   function walletCurrentBalance(wallet){
     const initial = Number(wallet.initialBalance || 0);
-    if(wallet.type === 'credit') return -transactions.filter(t => (t.walletId || '') === wallet.id && t.type === 'expense' && (t.status || 'paid') !== 'paid').reduce((s,t)=>s+Number(t.amount||0),0);
-    return initial + transactions.filter(t => (t.walletId || wallets()[0].id) === wallet.id).reduce((s,t)=>s + (t.type === 'income' ? Number(t.amount||0) : -Number(t.amount||0)),0);
+    const confirmed = transactions.filter(t => (t.walletId || wallets()[0].id) === wallet.id && isConfirmed(t));
+    if(wallet.type === 'credit') return initial - confirmed.filter(t => t.type === 'expense').reduce((s,t)=>s+Number(t.amount||0),0);
+    return initial + confirmed.reduce((s,t)=>s + (t.type === 'income' ? Number(t.amount||0) : -Number(t.amount||0)),0);
   }
   function creditInvoice(wallet){
-    return transactions.filter(t => (t.walletId || '') === wallet.id && t.type === 'expense' && monthKey(t.date) === currentMonthKey()).reduce((s,t)=>s+Number(t.amount||0),0);
+    return transactions.filter(t => (t.walletId || '') === wallet.id && t.type === 'expense' && isConfirmed(t) && monthKey(t.date) === currentMonthKey()).reduce((s,t)=>s+Number(t.amount||0),0);
   }
   function previousMonthKey(key){
     const [year, month] = key.split('-').map(Number);
@@ -2147,21 +2149,23 @@ function setActiveTab(tab){
     fillSelect($('categoryFilter'), [{value:'all', label:'Todas'}, ...cats.map(c => ({value:c,label:c}))], $('categoryFilter').value || 'all');
   }
 
-  function summarize(list){
-    const income = list.filter(t => t.type === 'income').reduce((sum,t)=>sum + Number(t.amount || 0),0);
-    const expense = list.filter(t => t.type === 'expense').reduce((sum,t)=>sum + Number(t.amount || 0),0);
-    const pendingExpense = list.filter(t => t.type === 'expense' && t.status === 'pending').reduce((sum,t)=>sum + Number(t.amount || 0),0);
-    const paidExpense = list.filter(t => t.type === 'expense' && t.status === 'paid').reduce((sum,t)=>sum + Number(t.amount || 0),0);
-    return {income, expense, pendingExpense, paidExpense, balance: income - expense, count: list.length};
+  function summarize(list, includePending = false){
+    const confirmed = includePending ? list : list.filter(isConfirmed);
+    const income = confirmed.filter(t => t.type === 'income').reduce((sum,t)=>sum + Number(t.amount || 0),0);
+    const expense = confirmed.filter(t => t.type === 'expense').reduce((sum,t)=>sum + Number(t.amount || 0),0);
+    const pendingIncome = list.filter(t => t.type === 'income' && !isConfirmed(t)).reduce((sum,t)=>sum + Number(t.amount || 0),0);
+    const pendingExpense = list.filter(t => t.type === 'expense' && !isConfirmed(t)).reduce((sum,t)=>sum + Number(t.amount || 0),0);
+    const paidExpense = list.filter(t => t.type === 'expense' && isConfirmed(t)).reduce((sum,t)=>sum + Number(t.amount || 0),0);
+    return {income, expense, pendingIncome, pendingExpense, paidExpense, balance: income - expense, count: list.length};
   }
 
   function transactionsByMonth(key){
     return transactions.filter(t => monthKey(t.date) === key);
   }
 
-  function categoryTotals(list, type = 'expense'){
+  function categoryTotals(list, type = 'expense', includePending = false){
     const totals = new Map();
-    list.filter(t => t.type === type).forEach(t => totals.set(t.category || 'Outros', (totals.get(t.category || 'Outros') || 0) + Number(t.amount || 0)));
+    list.filter(t => t.type === type && (includePending || isConfirmed(t))).forEach(t => totals.set(t.category || 'Outros', (totals.get(t.category || 'Outros') || 0) + Number(t.amount || 0)));
     return Array.from(totals.entries()).map(([category,total]) => ({category,total})).sort((a,b)=>b.total-a.total);
   }
 
@@ -2189,6 +2193,7 @@ function setActiveTab(tab){
     const key = currentMonthKey();
     const list = transactionsByMonth(key);
     const summary = summarize(list);
+    const projectedSummary = summarize(list, true);
     const budget = Number(settings.budget || 0);
     const days = elapsedDays(key);
     const remainingBudget = budget ? budget - summary.expense : 0;
@@ -2201,14 +2206,13 @@ function setActiveTab(tab){
     $('statBalance').textContent = brl(summary.balance);
     $('statCount').textContent = summary.count;
     $('statPending').textContent = `${brl(summary.pendingExpense)} em despesas pendentes.`;
-    const confirmedList = list.filter(t => (t.status || 'paid') === 'paid');
-    const confirmedSummary = summarize(confirmedList);
+    const confirmedSummary = summary;
     const today = todayISO();
     const limitDate = new Date(); limitDate.setDate(limitDate.getDate()+7);
     const limitISO = limitDate.toISOString().slice(0,10);
     const upcoming = transactions.filter(t => t.type === 'expense' && (t.status || 'paid') === 'pending' && t.date >= today && t.date <= limitISO);
     if($('dashboardCurrentBalance')) $('dashboardCurrentBalance').textContent = brl(confirmedSummary.balance);
-    if($('dashboardForecastBalance')) $('dashboardForecastBalance').textContent = brl(summary.balance);
+    if($('dashboardForecastBalance')) $('dashboardForecastBalance').textContent = brl(projectedSummary.balance);
     if($('dashboardUpcomingCount')) $('dashboardUpcomingCount').textContent = String(upcoming.length);
     $('balanceCard').classList.toggle('positive', summary.balance >= 0);
     $('balanceCard').classList.toggle('negative', summary.balance < 0);
@@ -2312,7 +2316,7 @@ function setActiveTab(tab){
     $('transactionForm').reset();
     $('dateInput').value = todayISO();
     $('typeInput').value = 'expense';
-    $('statusInput').value = 'paid';
+    $('statusInput').value = 'pending';
     updateCategoryInput();
     fillWalletSelect('walletInput');
     clearFieldErrors();
@@ -2400,6 +2404,15 @@ function setActiveTab(tab){
   function typePill(t){ return t.type === 'income' ? '<span class="pill income">⬆️ Receita</span>' : '<span class="pill expense">⬇️ Despesa</span>'; }
   function statusPill(t){ return (t.status || 'paid') === 'pending' ? '<span class="pill pending">Pendente</span>' : '<span class="pill paid">Pago/Recebido</span>'; }
 
+  function confirmTransaction(id){
+    const item = transactions.find(t => t.id === id);
+    if(!item || isConfirmed(item)) return;
+    transactions = transactions.map(t => t.id === id ? {...t, status:'paid', confirmedAt:new Date().toISOString(), updatedAt:new Date().toISOString()} : t);
+    saveTransactions();
+    showToast(item.type === 'income' ? 'Recebimento confirmado!' : 'Pagamento confirmado!');
+    refreshAll();
+  }
+
   function renderTransactions(){
     refreshMonthFilters();
     refreshCategoryFilter();
@@ -2430,9 +2443,10 @@ function setActiveTab(tab){
         <td><span class="pill">${escapeHtml(item.category)}</span></td>
         <td>${statusPill(item)}</td>
         <td class="money">${item.type === 'expense' ? '-' : '+'} ${brl(item.amount)}</td>
-        <td class="no-print"><div class="actions"><button class="btn ghost small" data-edit="${item.id}">Editar</button><button class="btn danger small" data-delete="${item.id}">Excluir</button></div></td>
+        <td class="no-print"><div class="actions">${!isConfirmed(item) ? `<button class="btn secondary small" data-confirm="${item.id}">${item.type === 'income' ? 'Receber' : 'Pagar'}</button>` : ''}<button class="btn ghost small" data-edit="${item.id}">Editar</button><button class="btn danger small" data-delete="${item.id}">Excluir</button></div></td>
       </tr>
     `).join('');
+    tbody.querySelectorAll('[data-confirm]').forEach(btn => btn.addEventListener('click', () => confirmTransaction(btn.dataset.confirm)));
     tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => editTransaction(btn.dataset.edit)));
     tbody.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', () => deleteTransaction(btn.dataset.delete)));
   }
@@ -2508,6 +2522,7 @@ function setActiveTab(tab){
       <div class="summary-line"><span>Total de receitas</span><strong>${brl(summary.income)}</strong></div>
       <div class="summary-line"><span>Total de despesas</span><strong>${brl(summary.expense)}</strong></div>
       <div class="summary-line"><span>Despesas pagas</span><strong>${brl(summary.paidExpense)}</strong></div>
+      <div class="summary-line"><span>Receitas pendentes</span><strong>${brl(summary.pendingIncome)}</strong></div>
       <div class="summary-line"><span>Despesas pendentes</span><strong>${brl(summary.pendingExpense)}</strong></div>
       <div class="summary-line"><span>Saldo final</span><strong>${brl(summary.balance)}</strong></div>
       <div class="summary-line"><span>Meta mensal</span><strong>${budget ? brl(budget) : 'Não definida'}</strong></div>
@@ -2981,7 +2996,7 @@ function setActiveTab(tab){
     if(!el) return;
     el.innerHTML = rows.length ? rows.map(accountCard).join('') : `<div class="empty">${escapeHtml(emptyText)}</div>`;
     el.querySelectorAll('[data-pay-account]').forEach(btn => btn.addEventListener('click', () => {
-      transactions = transactions.map(t => t.id === btn.dataset.payAccount ? {...t, status:'paid', updatedAt:new Date().toISOString()} : t);
+      transactions = transactions.map(t => t.id === btn.dataset.payAccount ? {...t, status:'paid', confirmedAt:new Date().toISOString(), updatedAt:new Date().toISOString()} : t);
       saveTransactions();
       showToast('Status atualizado!');
       refreshAll();
@@ -3038,7 +3053,7 @@ function duplicatePreviousMonth(){
 }
 
 function markPlannedPaid(id){
-  transactions = transactions.map(t=>t.id===id?{...t,status:'paid',planned:false,updatedAt:new Date().toISOString()}:t);
+  transactions = transactions.map(t=>t.id===id?{...t,status:'paid',planned:false,confirmedAt:new Date().toISOString(),updatedAt:new Date().toISOString()}:t);
   saveTransactions(); showToast('Lançamento confirmado.'); refreshAll(); renderPlanning();
 }
 
@@ -3078,7 +3093,7 @@ function renderPlanning(){
   refreshMonthFilters();
   const key=$('planningMonthFilter').value;
   const list=transactionsByMonth(key).sort((a,b)=>a.date.localeCompare(b.date));
-  const summary=summarize(list);
+  const summary=summarize(list, true);
   $('planningMonthLabel').textContent=monthName(key);
   $('planningIncome').textContent=brl(summary.income);
   $('planningExpense').textContent=brl(summary.expense);
