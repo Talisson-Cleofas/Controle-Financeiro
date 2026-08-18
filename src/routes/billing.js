@@ -101,7 +101,7 @@ r.post('/checkout',auth,async(req,res)=>{
   const plan=getPlan(req.body?.plan);if(!plan)return res.status(400).json({error:'Plano inválido.'});
   const frontend=process.env.FRONTEND_URL||process.env.APP_URL;const backend=process.env.BACKEND_URL||process.env.APP_URL;const reference=`${req.user.id}:${plan.id}:${crypto.randomUUID()}`;
   const data=await mp('/checkout/preferences',{method:'POST',headers:{'X-Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({items:[{id:`cf-${plan.id}`,title:`Controle Financeiro - Plano ${plan.name}`,quantity:1,currency_id:'BRL',unit_price:plan.price}],payer:{email:req.user.email},external_reference:reference,back_urls:{success:`${frontend}/?payment=success`,pending:`${frontend}/?payment=pending`,failure:`${frontend}/?payment=failure`},auto_return:'approved',notification_url:`${backend}/api/billing/webhook`,payment_methods:{excluded_payment_types:[{id:'ticket'}]},statement_descriptor:'CONTROLE FIN'})});
-  await Payment.create({userId:req.user._id,preferenceId:data.id,status:'pending',plan:plan.id,amount:plan.price});res.json({checkoutUrl:data.init_point||data.sandbox_init_point,preferenceId:data.id});
+  await Payment.create({userId:req.user._id,preferenceId:data.id,status:'pending',plan:plan.id,amount:plan.price});const checkoutUrl=mercadoPagoTestMode()?(data.sandbox_init_point||data.init_point):(data.init_point||data.sandbox_init_point);res.json({checkoutUrl,preferenceId:data.id});
 });
 r.post('/webhook',async(req,res)=>{
   const queryId=req.query?.['data.id'];const bodyId=req.body?.data?.id;const id=queryId||bodyId;if(!id)return res.sendStatus(200);
