@@ -2,5 +2,5 @@
 // Desenvolvimento local: http://localhost:3000/api
 // Produção exemplo: https://sua-api.onrender.com/api
 window.APP_CONFIG = {
-  API_URL: 'http://localhost:3000/api'
+  API_URL: 'https://controle-financeiro-e1pp.onrender.com/api'
 };
