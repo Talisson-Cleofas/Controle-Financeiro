@@ -13,10 +13,17 @@ const errorHandler = require('./middlewares/errorHandler');
 const app = express();
 const port = process.env.PORT || 3000;
 
-const allowedOrigins = (process.env.CLIENT_URL || '')
-  .split(',')
-  .map((item) => item.trim())
-  .filter(Boolean);
+const productionOrigins = [
+  'https://controle-financeiro-v10-planejament.vercel.app'
+];
+
+const allowedOrigins = Array.from(new Set([
+  ...(process.env.CLIENT_URL || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean),
+  ...productionOrigins
+]));
 
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
