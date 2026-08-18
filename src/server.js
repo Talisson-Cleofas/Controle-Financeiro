@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.js';
 import dataRoutes from './routes/data.js';
 import adminRoutes from './routes/admin.js';
 import billingRoutes from './routes/billing.js';
+import { ensurePaymentIndexes } from './models/Payment.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI não configurado.');
@@ -28,6 +29,7 @@ const allowedOrigins = String(process.env.CORS_ORIGINS || process.env.FRONTEND_U
 if (isProduction && !allowedOrigins.length) throw new Error('CORS_ORIGINS ou FRONTEND_URL deve ser configurado em produção.');
 
 await mongoose.connect(process.env.MONGODB_URI, mongoDbName ? { dbName: mongoDbName } : {});
+await ensurePaymentIndexes();
 
 const app = express();
 app.disable('x-powered-by');
