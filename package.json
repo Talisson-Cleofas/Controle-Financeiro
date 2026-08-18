@@ -1,24 +1,28 @@
 {
-  "name": "controle-financeiro-mongodb",
+  "name": "controle-financeiro-saas",
   "version": "2.0.0",
   "private": true,
-  "description": "Projeto completo com frontend PWA, backend Node.js/Express e MongoDB.",
+  "type": "module",
   "scripts": {
-    "backend:install": "cd backend && npm install",
-    "backend:dev": "cd backend && npm run dev",
-    "backend:start": "cd backend && npm start",
-    "mobile:add:android": "npx cap add android",
-    "mobile:add:ios": "npx cap add ios",
-    "mobile:copy": "npx cap copy",
-    "mobile:open:android": "npx cap open android",
-    "mobile:open:ios": "npx cap open ios"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "seed:admin": "node src/seed-admin.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
-    "@capacitor/core": "^6.2.0"
-  },
-  "devDependencies": {
-    "@capacitor/cli": "^6.2.0",
-    "@capacitor/android": "^6.2.0",
-    "@capacitor/ios": "^6.2.0"
+    "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.16.4",
+    "morgan": "^1.10.0",
+    "nodemailer": "^9.0.3"
   }
 }
