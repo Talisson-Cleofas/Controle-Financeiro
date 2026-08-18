@@ -1,0 +1,6 @@
+{
+  "buildCommand": null,
+  "outputDirectory": "frontend/www",
+  "cleanUrls": true,
+  "trailingSlash": false
+}
