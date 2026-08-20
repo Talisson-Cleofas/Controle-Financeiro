@@ -2,8 +2,9 @@
   "name": "Controle Financeiro",
   "short_name": "Financeiro",
   "description": "Controle financeiro pessoal com receitas, despesas, relatórios, backup e CSV.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "display_override": [
     "standalone",
