@@ -1,10 +1,10 @@
-const CACHE_NAME = 'controle-financeiro-saas-v3-ios';
+const CACHE_NAME = 'controle-financeiro-saas-v4-original-icon';
 const APP_SHELL = [
   '/manifest.webmanifest',
-  '/assets/icons/icon-192.png',
-  '/assets/icons/icon-512.png',
-  '/assets/icons/icon-maskable-512.png',
-  '/assets/icons/apple-touch-icon.png',
+  '/assets/icons/icon-192.png?v=original-2026',
+  '/assets/icons/icon-512.png?v=original-2026',
+  '/assets/icons/icon-maskable-512.png?v=original-2026',
+  '/assets/icons/apple-touch-icon.png?v=original-2026',
   '/assets/icons/favicon-16.png',
   '/assets/icons/favicon-32.png',
   '/assets/icons/favicon.ico'
