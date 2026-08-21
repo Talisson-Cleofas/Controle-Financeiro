@@ -67,4 +67,20 @@ window.APP_CONFIG = window.APP_CONFIG || {
     specularJs.dataset.specularButtons = 'true';
     document.head.appendChild(specularJs);
   }
+
+  if (!document.querySelector('link[data-magic-bento="true"]')) {
+    const bentoCss = document.createElement('link');
+    bentoCss.rel = 'stylesheet';
+    bentoCss.href = './magic-bento.css?v=1';
+    bentoCss.dataset.magicBento = 'true';
+    document.head.appendChild(bentoCss);
+  }
+
+  if (!document.querySelector('script[data-magic-bento="true"]')) {
+    const bentoJs = document.createElement('script');
+    bentoJs.type = 'module';
+    bentoJs.src = './magic-bento.js?v=1';
+    bentoJs.dataset.magicBento = 'true';
+    document.head.appendChild(bentoJs);
+  }
 })();
