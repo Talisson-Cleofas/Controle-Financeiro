@@ -55,7 +55,7 @@ window.APP_CONFIG = window.APP_CONFIG || {
   if (!document.querySelector('link[data-specular-buttons="true"]')) {
     const specularCss = document.createElement('link');
     specularCss.rel = 'stylesheet';
-    specularCss.href = './specular-buttons.css?v=1';
+    specularCss.href = './specular-buttons.css?v=2';
     specularCss.dataset.specularButtons = 'true';
     document.head.appendChild(specularCss);
   }
@@ -71,7 +71,7 @@ window.APP_CONFIG = window.APP_CONFIG || {
   if (!document.querySelector('link[data-magic-bento="true"]')) {
     const bentoCss = document.createElement('link');
     bentoCss.rel = 'stylesheet';
-    bentoCss.href = './magic-bento.css?v=1';
+    bentoCss.href = './magic-bento.css?v=2';
     bentoCss.dataset.magicBento = 'true';
     document.head.appendChild(bentoCss);
   }
@@ -79,7 +79,7 @@ window.APP_CONFIG = window.APP_CONFIG || {
   if (!document.querySelector('script[data-magic-bento="true"]')) {
     const bentoJs = document.createElement('script');
     bentoJs.type = 'module';
-    bentoJs.src = './magic-bento.js?v=1';
+    bentoJs.src = './magic-bento.js?v=2';
     bentoJs.dataset.magicBento = 'true';
     document.head.appendChild(bentoJs);
   }
