@@ -1,0 +1,106 @@
+/* UI Lab — layout mais espaçoso para Carteiras e Cartões. */
+#screen-carteiras > .grid.grid-2:first-child{
+  grid-template-columns:1fr!important;
+  gap:20px!important;
+  margin-bottom:20px!important;
+}
+
+#screen-carteiras > .grid.grid-2:first-child > .card{
+  width:100%;
+  padding:28px 30px;
+}
+
+#screen-carteiras > .grid.grid-2:first-child .card-title{
+  margin-bottom:24px;
+}
+
+#screen-carteiras > .grid.grid-2:first-child .card-title h2{
+  font-size:20px;
+}
+
+#screen-carteiras > .grid.grid-2:first-child .card-title p{
+  margin-top:6px;
+  line-height:1.5;
+}
+
+#screen-carteiras .wallet-form{
+  grid-template-columns:
+    minmax(260px,1.65fr)
+    minmax(200px,1fr)
+    minmax(220px,1.15fr)
+    minmax(160px,.8fr)
+    auto;
+  gap:20px;
+  align-items:end;
+}
+
+#screen-carteiras .card-form{
+  grid-template-columns:
+    minmax(250px,1.5fr)
+    minmax(220px,1.05fr)
+    minmax(170px,.82fr)
+    minmax(170px,.82fr)
+    minmax(160px,.78fr)
+    auto;
+  gap:20px;
+  align-items:end;
+}
+
+#screen-carteiras .wallet-form .field,
+#screen-carteiras .card-form .field{
+  min-width:0;
+}
+
+#screen-carteiras .wallet-form input,
+#screen-carteiras .card-form input,
+#screen-carteiras .wallet-form .ui-modern-select__trigger,
+#screen-carteiras .card-form .ui-modern-select__trigger{
+  min-height:50px;
+}
+
+#screen-carteiras .wallet-form .btn,
+#screen-carteiras .card-form .btn{
+  min-width:164px;
+  min-height:50px;
+  padding-left:20px;
+  padding-right:20px;
+}
+
+@media(max-width:1180px){
+  #screen-carteiras .wallet-form,
+  #screen-carteiras .card-form{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px 18px;
+  }
+
+  #screen-carteiras .wallet-form .btn,
+  #screen-carteiras .card-form .btn{
+    grid-column:1/-1;
+    width:100%;
+  }
+}
+
+@media(max-width:720px){
+  #screen-carteiras > .grid.grid-2:first-child{
+    gap:14px!important;
+  }
+
+  #screen-carteiras > .grid.grid-2:first-child > .card{
+    padding:20px 18px;
+  }
+
+  #screen-carteiras > .grid.grid-2:first-child .card-title{
+    margin-bottom:18px;
+  }
+
+  #screen-carteiras .wallet-form,
+  #screen-carteiras .card-form{
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+
+  #screen-carteiras .wallet-form .btn,
+  #screen-carteiras .card-form .btn{
+    grid-column:auto;
+  }
+}
