@@ -1,10 +1,10 @@
-/* UI Lab — controles customizados do campo de meta mensal. */
-#budgetInput::-webkit-outer-spin-button,
-#budgetInput::-webkit-inner-spin-button{
+/* UI Lab — stepper neon reutilizável para campos numéricos do app. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button{
   -webkit-appearance:none;
   margin:0;
 }
-#budgetInput{
+input[type="number"]{
   -moz-appearance:textfield;
   appearance:textfield;
 }
@@ -14,9 +14,12 @@
   display:flex;
   align-items:stretch;
   width:100%;
+  min-width:0;
 }
-.ui-budget-stepper-wrap #budgetInput{
-  padding-right:62px;
+.ui-budget-stepper-wrap > input[type="number"]{
+  width:100%;
+  min-width:0;
+  padding-right:62px!important;
 }
 .ui-budget-stepper{
   position:absolute;
@@ -27,23 +30,35 @@
   display:flex;
   flex-direction:column;
   gap:5px;
+  z-index:2;
 }
 .ui-budget-stepper-btn{
-  flex:1;
+  flex:1 1 0;
+  min-width:0;
   min-height:0;
+  width:100%;
+  margin:0;
   padding:0;
   border:1px solid rgba(255,255,255,.10);
   border-radius:9px;
   background:linear-gradient(145deg,rgba(91,124,250,.22),rgba(124,58,237,.22));
   color:#fff;
-  font-size:15px;
-  font-weight:900;
-  line-height:1;
-  display:grid;
-  place-items:center;
   cursor:pointer;
   box-shadow:0 5px 14px rgba(91,124,250,.16),inset 0 1px 0 rgba(255,255,255,.10);
   transition:transform .15s ease,filter .15s ease,border-color .15s ease,box-shadow .15s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font:900 16px/1 Arial,sans-serif;
+}
+.ui-budget-stepper-btn > span{
+  display:block;
+  width:100%;
+  line-height:1;
+  text-align:center;
+  transform:translateY(-.5px);
+  pointer-events:none;
 }
 .ui-budget-stepper-btn:hover{
   transform:translateY(-1px);
@@ -65,8 +80,18 @@
   box-shadow:0 0 0 3px rgba(111,140,255,.18),0 7px 18px rgba(91,124,250,.22);
 }
 
+/* Campos menores continuam proporcionais nas telas de formulários. */
+.field .ui-budget-stepper-wrap,
+.mini-form .ui-budget-stepper-wrap,
+.recurring-form .ui-budget-stepper-wrap,
+.wallet-form .ui-budget-stepper-wrap,
+.card-form .ui-budget-stepper-wrap,
+.planning-form .ui-budget-stepper-wrap{
+  max-width:100%;
+}
+
 @media(max-width:720px){
-  .ui-budget-stepper-wrap #budgetInput{padding-right:66px}
+  .ui-budget-stepper-wrap > input[type="number"]{padding-right:66px!important}
   .ui-budget-stepper{width:46px}
-  .ui-budget-stepper-btn{font-size:16px}
+  .ui-budget-stepper-btn{font-size:17px}
 }
