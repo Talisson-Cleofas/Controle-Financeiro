@@ -51,4 +51,20 @@ window.APP_CONFIG = window.APP_CONFIG || {
     wavesJs.dataset.gradientWaves = 'true';
     document.head.appendChild(wavesJs);
   }
+
+  if (!document.querySelector('link[data-specular-buttons="true"]')) {
+    const specularCss = document.createElement('link');
+    specularCss.rel = 'stylesheet';
+    specularCss.href = './specular-buttons.css?v=1';
+    specularCss.dataset.specularButtons = 'true';
+    document.head.appendChild(specularCss);
+  }
+
+  if (!document.querySelector('script[data-specular-buttons="true"]')) {
+    const specularJs = document.createElement('script');
+    specularJs.type = 'module';
+    specularJs.src = './specular-buttons.js?v=1';
+    specularJs.dataset.specularButtons = 'true';
+    document.head.appendChild(specularJs);
+  }
 })();
