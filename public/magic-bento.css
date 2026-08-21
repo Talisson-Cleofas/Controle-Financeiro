@@ -1,0 +1,95 @@
+/* MagicBento adaptado aos cards reais do Controle Financeiro. */
+:root{
+  --magic-bento-glow:132,0,255;
+}
+
+.magic-bento-card{
+  --glow-x:50%;
+  --glow-y:50%;
+  --glow-intensity:0;
+  --glow-radius:300px;
+  --magic-tilt-x:0deg;
+  --magic-tilt-y:0deg;
+  --magic-magnet-x:0px;
+  --magic-magnet-y:0px;
+  position:relative!important;
+  isolation:isolate;
+  overflow:hidden!important;
+  transform-style:preserve-3d;
+  will-change:transform;
+  transition:border-color .28s ease,box-shadow .28s ease,transform .22s ease!important;
+}
+
+.magic-bento-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  padding:1px;
+  border-radius:inherit;
+  background:radial-gradient(
+    var(--glow-radius) circle at var(--glow-x) var(--glow-y),
+    rgba(var(--magic-bento-glow),calc(var(--glow-intensity) * .95)) 0%,
+    rgba(var(--magic-bento-glow),calc(var(--glow-intensity) * .48)) 28%,
+    transparent 62%
+  );
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  mask-composite:exclude;
+  pointer-events:none;
+  z-index:4;
+}
+
+.magic-bento-card.magic-bento-active{
+  box-shadow:
+    0 18px 42px rgba(0,0,0,.25),
+    0 0 28px rgba(var(--magic-bento-glow),.14)!important;
+}
+
+.magic-bento-particle{
+  position:absolute;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:rgba(var(--magic-bento-glow),1);
+  box-shadow:0 0 7px rgba(var(--magic-bento-glow),.72);
+  pointer-events:none;
+  z-index:5;
+  opacity:0;
+}
+
+.magic-bento-ripple{
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:3;
+  background:radial-gradient(circle,rgba(var(--magic-bento-glow),.38) 0%,rgba(var(--magic-bento-glow),.16) 34%,transparent 70%);
+}
+
+.magic-bento-global-spotlight{
+  position:fixed;
+  width:800px;
+  height:800px;
+  border-radius:50%;
+  pointer-events:none;
+  background:radial-gradient(circle,
+    rgba(var(--magic-bento-glow),.13) 0%,
+    rgba(var(--magic-bento-glow),.07) 15%,
+    rgba(var(--magic-bento-glow),.035) 27%,
+    rgba(var(--magic-bento-glow),.015) 44%,
+    transparent 70%);
+  transform:translate(-50%,-50%);
+  mix-blend-mode:screen;
+  z-index:2;
+  opacity:0;
+  will-change:left,top,opacity;
+}
+
+@media(max-width:768px),(prefers-reduced-motion:reduce){
+  .magic-bento-card{
+    transform:none!important;
+    will-change:auto;
+  }
+  .magic-bento-card::after{display:none}
+  .magic-bento-global-spotlight,.magic-bento-particle{display:none!important}
+}
