@@ -76,26 +76,32 @@
   background:rgba(124,92,255,.20);
 }
 .ui-modern-select__menu{
-  position:absolute;
-  top:calc(100% + 8px);
-  left:0;
-  right:0;
-  z-index:10000;
+  position:fixed;
+  z-index:2147483000;
   display:none;
-  max-height:min(320px,45vh);
   overflow:auto;
   padding:7px;
-  border:1px solid rgba(111,140,255,.24);
+  border:1px solid rgba(111,140,255,.28);
   border-radius:14px;
-  background:rgba(9,16,29,.98);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
-  box-shadow:0 22px 60px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.045);
+  background:linear-gradient(160deg,rgba(9,16,29,.995),rgba(13,20,35,.995));
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 24px 70px rgba(0,0,0,.48),0 0 0 1px rgba(124,92,255,.06),inset 0 1px 0 rgba(255,255,255,.05);
   transform-origin:top center;
   animation:uiSelectIn .16s ease both;
+  overscroll-behavior:contain;
 }
-.ui-modern-select.is-open .ui-modern-select__menu{display:block}
-@keyframes uiSelectIn{from{opacity:0;transform:translateY(-5px) scale(.985)}to{opacity:1;transform:none}}
+.ui-modern-select__menu.is-open{display:block}
+.ui-modern-select__menu.opens-up{transform-origin:bottom center}
+@keyframes uiSelectIn{
+  from{opacity:0;transform:translateY(-5px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+.ui-modern-select__menu.opens-up{animation-name:uiSelectInUp}
+@keyframes uiSelectInUp{
+  from{opacity:0;transform:translateY(5px) scale(.985)}
+  to{opacity:1;transform:none}
+}
 .ui-modern-select__option{
   width:100%;
   min-height:42px;
