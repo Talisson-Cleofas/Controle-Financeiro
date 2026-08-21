@@ -1,0 +1,72 @@
+/* UI Lab — controles customizados do campo de meta mensal. */
+#budgetInput::-webkit-outer-spin-button,
+#budgetInput::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+#budgetInput{
+  -moz-appearance:textfield;
+  appearance:textfield;
+}
+
+.ui-budget-stepper-wrap{
+  position:relative;
+  display:flex;
+  align-items:stretch;
+  width:100%;
+}
+.ui-budget-stepper-wrap #budgetInput{
+  padding-right:62px;
+}
+.ui-budget-stepper{
+  position:absolute;
+  top:6px;
+  right:6px;
+  bottom:6px;
+  width:42px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.ui-budget-stepper-btn{
+  flex:1;
+  min-height:0;
+  padding:0;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:9px;
+  background:linear-gradient(145deg,rgba(91,124,250,.22),rgba(124,58,237,.22));
+  color:#fff;
+  font-size:15px;
+  font-weight:900;
+  line-height:1;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  box-shadow:0 5px 14px rgba(91,124,250,.16),inset 0 1px 0 rgba(255,255,255,.10);
+  transition:transform .15s ease,filter .15s ease,border-color .15s ease,box-shadow .15s ease;
+}
+.ui-budget-stepper-btn:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.15) saturate(1.20);
+  border-color:rgba(111,140,255,.42);
+  box-shadow:0 7px 18px rgba(91,124,250,.22),inset 0 1px 0 rgba(255,255,255,.14);
+}
+.ui-budget-stepper-btn:active{transform:scale(.95)}
+.ui-budget-stepper-btn[data-direction="up"]{
+  color:#1aff9c;
+  text-shadow:0 0 8px rgba(26,255,156,.38),0 0 16px rgba(26,255,156,.18);
+}
+.ui-budget-stepper-btn[data-direction="down"]{
+  color:#ff4fa3;
+  text-shadow:0 0 8px rgba(255,79,163,.36),0 0 16px rgba(255,79,163,.18);
+}
+.ui-budget-stepper-btn:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(111,140,255,.18),0 7px 18px rgba(91,124,250,.22);
+}
+
+@media(max-width:720px){
+  .ui-budget-stepper-wrap #budgetInput{padding-right:66px}
+  .ui-budget-stepper{width:46px}
+  .ui-budget-stepper-btn{font-size:16px}
+}
