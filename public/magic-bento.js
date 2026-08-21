@@ -1,4 +1,4 @@
-// MagicBento adaptado para HTML/CSS/JS puro usando GSAP — versão suave.
+// MagicBento adaptado para HTML/CSS/JS puro usando GSAP — aplicado em todas as telas.
 import { gsap } from 'https://esm.sh/gsap@3.13.0';
 
 const CONFIG = {
@@ -14,9 +14,25 @@ const CONFIG = {
   maxGlow:.45
 };
 
+// Elementos visuais principais presentes nas diferentes abas do app.
 const CARD_SELECTOR = [
-  '.card', '.stat', '.mini-kpi', '.smart-alert', '.health', '.insight',
-  '.wallet-card', '.compare-card', '.account-column', '.empty'
+  '.screen .card',
+  '.screen .stat',
+  '.screen .mini-kpi',
+  '.screen .smart-alert',
+  '.screen .health',
+  '.screen .insight',
+  '.screen .wallet-card',
+  '.screen .compare-card',
+  '.screen .account-column',
+  '.screen .account-card',
+  '.screen .chart-card',
+  '.screen .table-wrap',
+  '.screen .empty',
+  '.screen .ai-answer',
+  '.screen .budget-card',
+  '.screen .goal-card',
+  '.screen .planning-card'
 ].join(',');
 
 const isMobile = () => window.innerWidth <= 768 || matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -37,7 +53,7 @@ function createParticle(card){
 
 function decorateCard(card){
   if(card.dataset.magicBentoReady==='true') return;
-  if(card.closest('.tabs,.table-wrap,.modal,.dialog') || card.matches('.ui-number-stepper-wrap')) return;
+  if(card.closest('.tabs,.modal,.dialog') || card.matches('.ui-number-stepper-wrap')) return;
   card.dataset.magicBentoReady='true';
   card.classList.add('magic-bento-card');
   card.style.setProperty('--magic-bento-glow',CONFIG.glowColor);
@@ -59,6 +75,7 @@ function decorateCard(card){
   card.addEventListener('mousemove',e=>{
     if(isMobile()) return;
     const r=card.getBoundingClientRect();
+    if(!r.width || !r.height) return;
     const x=e.clientX-r.left,y=e.clientY-r.top,cx=r.width/2,cy=r.height/2;
     card.style.setProperty('--glow-x',`${(x/r.width)*100}%`);
     card.style.setProperty('--glow-y',`${(y/r.height)*100}%`);
@@ -80,6 +97,7 @@ function decorateCard(card){
 
   card.addEventListener('click',e=>{
     if(isMobile() || !CONFIG.clickEffect) return;
+    if(e.target.closest('button,input,select,textarea,a,.ui-modern-select,.ui-number-stepper-wrap')) return;
     const r=card.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
     const max=Math.max(Math.hypot(x,y),Math.hypot(x-r.width,y),Math.hypot(x,y-r.height),Math.hypot(x-r.width,y-r.height));
     const ripple=document.createElement('span');
@@ -104,6 +122,7 @@ function setupSpotlight(){
     const proximity=CONFIG.spotlightRadius*.5,fade=CONFIG.spotlightRadius*.8;
     for(const c of cards){
       const r=c.getBoundingClientRect();
+      if(!r.width || !r.height) continue;
       const cx=r.left+r.width/2,cy=r.top+r.height/2;
       const effective=Math.max(0,Math.hypot(e.clientX-cx,e.clientY-cy)-Math.max(r.width,r.height)/2);
       min=Math.min(min,effective);
@@ -120,10 +139,27 @@ function setupSpotlight(){
 }
 
 function scan(root=document){ root.querySelectorAll?.(CARD_SELECTOR).forEach(decorateCard); }
+
+function rescanVisibleScreen(){
+  const active=document.querySelector('.screen.active');
+  if(active) scan(active);
+}
+
 function init(){
   scan();
   setupSpotlight();
-  const obs=new MutationObserver(m=>m.forEach(rec=>rec.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches?.(CARD_SELECTOR)) decorateCard(n);scan(n);}})));
+
+  // Reaplica ao trocar de aba e cobre conteúdo criado dinamicamente.
+  document.addEventListener('click',e=>{
+    if(e.target.closest('.tab-btn,[data-screen],[data-tab]')) setTimeout(rescanVisibleScreen,0);
+  });
+
+  const obs=new MutationObserver(m=>m.forEach(rec=>rec.addedNodes.forEach(n=>{
+    if(n.nodeType===1){
+      if(n.matches?.(CARD_SELECTOR)) decorateCard(n);
+      scan(n);
+    }
+  })));
   obs.observe(document.body,{childList:true,subtree:true});
 }
 
