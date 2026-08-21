@@ -1,7 +1,7 @@
 // React Bits SpecularButton — adaptacao JS pura para o app atual.
 import { Renderer, Program, Mesh, Triangle, Color } from 'https://esm.sh/ogl@1.0.11';
 
-const PAD = 8;
+const PAD = 0;
 const VERT = `#version 300 es
 in vec2 position;
 void main(){gl_Position=vec4(position,0.0,1.0);}`;
@@ -34,8 +34,7 @@ function isActionButton(btn){
   if(btn.closest('.saas-tabs,.tabs,.tabs-primary,.tabs-secondary,.nav,.top-nav,.segmented,.ui-number-stepper-wrap')) return false;
   if(btn.matches('.ui-budget-stepper-btn,[role="tab"],.tab,.tab-btn,.nav-item,.icon-btn,[aria-label*="menu" i],[aria-label*="fechar" i]')) return false;
   const text=(btn.textContent||'').trim().toLowerCase();
-  if(!text) return false;
-  if(text.includes('esqueci minha senha') || text==='entrar' && btn.closest('.saas-tabs')) return false;
+  if(!text || text.includes('esqueci minha senha')) return false;
   const r=btn.getBoundingClientRect();
   if(r.width<88 || r.height<36) return false;
 
@@ -59,7 +58,7 @@ function mount(btn){
     uLineColor:{value:[1,1,1]},uBaseColor:{value:[.32,.32,.32]},uIntensity:{value:0},uShineSize:{value:.17},uShineFade:{value:.7},uThickness:{value:1},uBaseWidth:{value:dpr}
   }});
   const mesh=new Mesh(gl,{geometry,program}); fx.appendChild(gl.canvas);
-  let size={w:1,h:1}; const resize=()=>{const r=btn.getBoundingClientRect();size={w:r.width,h:r.height};renderer.setSize(r.width+PAD*2,r.height+PAD*2);program.uniforms.uCenter.value=[(PAD+r.width/2)*dpr,(PAD+r.height/2)*dpr];program.uniforms.uHalfSize.value=[r.width/2*dpr,r.height/2*dpr];};
+  let size={w:1,h:1}; const resize=()=>{const r=btn.getBoundingClientRect();size={w:r.width,h:r.height};renderer.setSize(r.width,r.height);program.uniforms.uCenter.value=[r.width/2*dpr,r.height/2*dpr];program.uniforms.uHalfSize.value=[Math.max(1,r.width/2*dpr-1),Math.max(1,r.height/2*dpr-1)];};
   const ro=new ResizeObserver(resize); ro.observe(btn); resize();
   let angle=2.4,idle=2.4,bright=0,last=performance.now(),raf=0,visible=true;
   const lineC=new Color(settings.lineColor),baseC=new Color(settings.baseColor);
