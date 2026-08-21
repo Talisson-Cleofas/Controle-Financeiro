@@ -1,7 +1,7 @@
 // React Bits SpecularButton — adaptacao JS pura para o app atual.
 import { Renderer, Program, Mesh, Triangle, Color } from 'https://esm.sh/ogl@1.0.11';
 
-const PAD = 20;
+const PAD = 8;
 const VERT = `#version 300 es
 in vec2 position;
 void main(){gl_Position=vec4(position,0.0,1.0);}`;
@@ -14,7 +14,7 @@ float sdRoundedRect(vec2 p, vec2 b, float r){vec2 q=abs(p)-b+r;return length(max
 float gaussianLine(float d,float sigma){float x=d/(sigma+1e-6);float k=mix(1.0,1.6,smoothstep(0.0,1.5,x));return exp(-k*x*x);}
 void main(){
   vec2 p=gl_FragCoord.xy-uCenter; float d=sdRoundedRect(p,uHalfSize,uRadius); vec2 L=vec2(cos(uAngle),sin(uAngle));
-  float base=(1.0-smoothstep(0.0,uBaseWidth,abs(d)))*0.45;
+  float base=(1.0-smoothstep(0.0,uBaseWidth,abs(d)))*0.30;
   vec2 nEll=normalize(p/(uHalfSize*uHalfSize)+1e-6);
   float phi=acos(clamp(abs(dot(nEll,L)),0.0,1.0));
   float rim=1.0-smoothstep(uShineSize-uShineFade,uShineSize+uShineFade+1e-4,phi);
@@ -24,18 +24,25 @@ void main(){
 }`;
 
 const settings = {
-  radius:18,lineColor:'#ffffff',baseColor:'#525252',intensity:1,shineSize:10,shineFade:40,thickness:1,speed:.35,followMouse:true,proximity:250,autoAnimate:false
+  radius:18,lineColor:'#ffffff',baseColor:'#525252',intensity:.65,shineSize:9,shineFade:34,thickness:.9,speed:.28,followMouse:true,proximity:180,autoAnimate:false
 };
 let pointer={x:-9999,y:-9999};
 window.addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY},{passive:true});
 
 function isActionButton(btn){
   if(!(btn instanceof HTMLButtonElement) || btn.disabled) return false;
-  if(btn.matches('.ui-budget-stepper-btn,[role="tab"],.tab,.tabs button,.nav button,.nav-item,.icon-btn,[aria-label*="menu" i],[aria-label*="fechar" i]')) return false;
+  if(btn.closest('.saas-tabs,.tabs,.tabs-primary,.tabs-secondary,.nav,.top-nav,.segmented,.ui-number-stepper-wrap')) return false;
+  if(btn.matches('.ui-budget-stepper-btn,[role="tab"],.tab,.tab-btn,.nav-item,.icon-btn,[aria-label*="menu" i],[aria-label*="fechar" i]')) return false;
+  const text=(btn.textContent||'').trim().toLowerCase();
+  if(!text) return false;
+  if(text.includes('esqueci minha senha') || text==='entrar' && btn.closest('.saas-tabs')) return false;
   const r=btn.getBoundingClientRect();
-  if(r.width<72 || r.height<34) return false;
-  const text=(btn.textContent||'').trim();
-  return text.length>0;
+  if(r.width<88 || r.height<36) return false;
+
+  const isPrimaryClass=btn.matches('.btn,.primary,.btn-primary,.cta,.btn-action,.btn-save,.btn-login');
+  const actionWords=['entrar','salvar','adicionar','criar','confirmar','continuar','pagar','gerar','importar','exportar','despesa','receita','backup','restaurar'];
+  const hasActionWord=actionWords.some(word=>text.includes(word));
+  return isPrimaryClass || hasActionWord;
 }
 
 function mount(btn){
@@ -61,7 +68,7 @@ function mount(btn){
     raf=0; if(!visible||!document.body.contains(btn)) return;
     const dt=Math.min((now-last)/1000,.05); last=now; const r=btn.getBoundingClientRect(); const cx=r.left+r.width/2,cy=r.top+r.height/2;
     const dx=Math.max(r.left-pointer.x,0,pointer.x-r.right),dy=Math.max(r.top-pointer.y,0,pointer.y-r.bottom),dist=Math.hypot(dx,dy);
-    let pointerAngle=null; if(dist===0){const nx=(pointer.x-cx)/(r.width/2),ny=(cy-pointer.y)/(r.height/2);pointerAngle=Math.atan2(2/r.height,-2/r.width)+nx*.3+ny*.15;} else pointerAngle=Math.atan2(cy-pointer.y,pointer.x-cx);
+    let pointerAngle=null; if(dist===0){const nx=(pointer.x-cx)/(r.width/2),ny=(cy-pointer.y)/(r.height/2);pointerAngle=Math.atan2(2/r.height,-2/r.width)+nx*.2+ny*.1;} else pointerAngle=Math.atan2(cy-pointer.y,pointer.x-cx);
     const t=Math.max(0,1-dist/Math.max(settings.proximity,1)),prox=t*t*(3-2*t); idle+=settings.speed*dt;
     const target=settings.followMouse?pointerAngle:idle; const diff=((target-angle+Math.PI*3)%(Math.PI*2))-Math.PI; angle+=diff*(1-Math.exp(-dt*7));
     const brightTarget=settings.autoAnimate?1:prox; bright+=(brightTarget-bright)*(1-Math.exp(-dt*8));
