@@ -14,7 +14,8 @@
     "mobile:open:ios": "npx cap open ios"
   },
   "dependencies": {
-    "@capacitor/core": "^6.2.0"
+    "@capacitor/core": "^6.2.0",
+    "ogl": "^1.0.11"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.0",
