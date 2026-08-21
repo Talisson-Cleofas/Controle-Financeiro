@@ -1,0 +1,177 @@
+/* UI Lab — camada visual aplicada sobre a interface atual de produção. */
+:root{
+  --ui-border:rgba(148,163,184,.16);
+  --ui-border-strong:rgba(111,140,255,.30);
+  --ui-blue:#6f8cff;
+  --ui-violet:#8b5cf6;
+  --ui-shadow:0 18px 48px rgba(0,0,0,.24);
+  --ui-shadow-soft:0 10px 30px rgba(0,0,0,.18);
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 16% 3%,rgba(91,124,250,.12),transparent 30rem),
+    radial-gradient(circle at 88% 10%,rgba(139,92,246,.10),transparent 31rem);
+}
+
+.app-header{padding:8px 2px 2px}
+
+.brand-mark{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.11);
+  box-shadow:0 14px 34px rgba(91,124,250,.22);
+}
+.brand-mark::after{
+  content:"";
+  position:absolute;
+  inset:-70%;
+  z-index:-1;
+  background:conic-gradient(from 180deg,transparent,rgba(255,255,255,.25),transparent 30%);
+  animation:uiBrandSpin 8s linear infinite;
+}
+@keyframes uiBrandSpin{to{transform:rotate(360deg)}}
+
+.tabs{
+  background:rgba(10,16,28,.72);
+  border-color:var(--ui-border);
+  box-shadow:0 12px 38px rgba(0,0,0,.18);
+}
+.tab-btn{position:relative;overflow:hidden}
+.tab-btn::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  opacity:0;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,.09),transparent);
+  transform:translateX(-80%);
+  transition:opacity .2s ease,transform .45s ease;
+}
+.tab-btn:hover::before{opacity:1;transform:translateX(80%)}
+.tab-btn.active{
+  background:linear-gradient(135deg,#5878f8,#7c46ef);
+  box-shadow:0 10px 28px rgba(91,124,250,.23),inset 0 1px 0 rgba(255,255,255,.14);
+}
+
+.card,.stat,.health,.insight,.empty,.table-wrap{
+  border-color:var(--ui-border);
+  backdrop-filter:blur(16px);
+}
+.card{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(155deg,rgba(27,36,51,.90),rgba(16,24,38,.88));
+  box-shadow:var(--ui-shadow-soft);
+}
+.card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  pointer-events:none;
+}
+.stat{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(145deg,rgba(15,23,42,.78),rgba(24,34,51,.72));
+  box-shadow:var(--ui-shadow-soft);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.stat::after{
+  content:"";
+  position:absolute;
+  width:130px;height:130px;
+  right:-54px;bottom:-68px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(111,140,255,.15),transparent 68%);
+  pointer-events:none;
+}
+.stat:hover{
+  transform:translateY(-3px);
+  border-color:var(--ui-border-strong);
+  box-shadow:0 18px 42px rgba(0,0,0,.24);
+}
+.stat .value{font-variant-numeric:tabular-nums}
+
+.health{box-shadow:var(--ui-shadow-soft)}
+.health.ok{background:linear-gradient(145deg,rgba(15,65,53,.34),rgba(15,23,42,.72))}
+.health.warn{background:linear-gradient(145deg,rgba(78,55,12,.30),rgba(15,23,42,.72))}
+.health.bad{background:linear-gradient(145deg,rgba(85,25,38,.30),rgba(15,23,42,.72))}
+
+.btn{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:0 10px 25px rgba(91,124,250,.18),inset 0 1px 0 rgba(255,255,255,.12);
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+.btn::before{
+  content:"";
+  position:absolute;
+  top:-90%;left:-38%;
+  width:34%;height:280%;
+  z-index:-1;
+  transform:rotate(24deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+  transition:left .5s ease;
+}
+.btn:hover::before{left:118%}
+.btn:hover{transform:translateY(-2px);box-shadow:0 15px 34px rgba(91,124,250,.24),inset 0 1px 0 rgba(255,255,255,.14)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn.ghost,.btn.secondary{backdrop-filter:blur(12px);box-shadow:none}
+
+input,select,textarea{
+  background:rgba(8,14,25,.76);
+  border-color:rgba(148,163,184,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+input:hover,select:hover,textarea:hover{border-color:rgba(148,163,184,.28)}
+input:focus,select:focus,textarea:focus{
+  border-color:rgba(111,140,255,.76);
+  box-shadow:0 0 0 4px rgba(111,140,255,.11),0 8px 22px rgba(0,0,0,.12);
+}
+
+.progress,.bar-track{background:rgba(7,13,23,.88);border-color:rgba(148,163,184,.12)}
+.progress > span,.bar-track span{position:relative;overflow:hidden}
+.progress > span::after,.bar-track span::after{
+  content:"";
+  position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.24) 45%,transparent 70%);
+  transform:translateX(-100%);
+  animation:uiProgressSheen 3.2s ease-in-out infinite;
+}
+@keyframes uiProgressSheen{55%,100%{transform:translateX(150%)}}
+
+.table-wrap{background:rgba(9,15,26,.34)}
+thead th{background:rgba(10,17,29,.82)}
+tbody tr{transition:background .18s ease}
+tbody tr:hover{background:rgba(91,124,250,.055)}
+
+.insight{background:rgba(10,17,29,.52);transition:transform .18s ease,border-color .18s ease}
+.insight:hover{transform:translateX(3px);border-color:rgba(111,140,255,.24)}
+
+.saas-box{
+  background:linear-gradient(155deg,rgba(26,35,51,.96),rgba(14,21,34,.96))!important;
+  border-color:var(--ui-border)!important;
+  box-shadow:var(--ui-shadow)!important;
+  backdrop-filter:blur(18px);
+}
+.saas-logo{box-shadow:0 15px 35px rgba(91,124,250,.23)}
+.saas-tabs{background:rgba(8,14,25,.75)!important;border:1px solid var(--ui-border)}
+.saas-tabs button{transition:.18s ease}
+.saas-tabs button.active{background:linear-gradient(135deg,rgba(91,124,250,.24),rgba(124,58,237,.18))!important}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+@media(max-width:720px){
+  .stat:hover,.insight:hover{transform:none}
+  .card,.stat,.health{backdrop-filter:blur(10px)}
+}
