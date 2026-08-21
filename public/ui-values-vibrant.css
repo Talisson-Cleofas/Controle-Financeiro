@@ -1,68 +1,79 @@
-/* UI Lab — cores financeiras mais vibrantes, sem alterar layout ou lógica. */
+/* UI Lab — paleta financeira aprovada + glow sutil, sem alterar layout ou lógica. */
 :root{
-  --ui-income-vibrant:#22f0a6;
-  --ui-expense-vibrant:#ff6388;
-  --ui-balance-vibrant:#31e6c1;
-  --ui-number-vibrant:#f8fbff;
+  --ui-income-vibrant:#34d399;
+  --ui-expense-vibrant:#fb7185;
+  --ui-balance-vibrant:#f8fafc;
+  --ui-pending-vibrant:#fbbf24;
+  --ui-number-vibrant:#f8fafc;
 }
 
 /* KPIs superiores */
 .dashboard-forecast .mini-kpi strong{
   color:var(--ui-number-vibrant);
   font-weight:850;
-  text-shadow:0 0 14px rgba(248,251,255,.07);
+  text-shadow:
+    0 0 10px rgba(248,250,252,.10),
+    0 0 24px rgba(248,250,252,.05);
 }
 
 /* Cards financeiros principais */
 #screen-painel > .grid.grid-4 .stat .value{
   font-weight:850;
   letter-spacing:-.045em;
-  filter:saturate(1.14) brightness(1.06);
+  filter:saturate(1.08) brightness(1.05);
 }
 
-#screen-painel > .grid.grid-4 .stat.income .value{
+/* Receitas — verde aprovado */
+#screen-painel > .grid.grid-4 .stat.income .value,
+.stat.income .value{
   color:var(--ui-income-vibrant);
   text-shadow:
-    0 0 10px rgba(34,240,166,.18),
-    0 0 26px rgba(34,240,166,.09);
+    0 0 10px rgba(52,211,153,.20),
+    0 0 26px rgba(52,211,153,.10);
 }
 
-#screen-painel > .grid.grid-4 .stat.expense .value{
+/* Despesas — rosa/vermelho aprovado */
+#screen-painel > .grid.grid-4 .stat.expense .value,
+.stat.expense .value{
   color:var(--ui-expense-vibrant);
   text-shadow:
-    0 0 10px rgba(255,99,136,.20),
-    0 0 26px rgba(255,99,136,.10);
+    0 0 10px rgba(251,113,133,.22),
+    0 0 26px rgba(251,113,133,.11);
 }
 
-#screen-painel > .grid.grid-4 .stat.balance.positive .value{
+/* Saldo — branco como no visual aprovado */
+#screen-painel > .grid.grid-4 .stat.balance.positive .value,
+#screen-painel > .grid.grid-4 .stat.balance.negative .value,
+.stat.balance.positive .value,
+.stat.balance.negative .value{
   color:var(--ui-balance-vibrant);
   text-shadow:
-    0 0 10px rgba(49,230,193,.19),
-    0 0 26px rgba(49,230,193,.10);
+    0 0 10px rgba(248,250,252,.12),
+    0 0 24px rgba(248,250,252,.06);
 }
 
-#screen-painel > .grid.grid-4 .stat.balance.negative .value{
-  color:var(--ui-expense-vibrant);
-  text-shadow:
-    0 0 10px rgba(255,99,136,.20),
-    0 0 26px rgba(255,99,136,.10);
-}
-
-/* Mantém contagem de lançamentos branca e forte. */
+/* Contagens e valores neutros */
 #screen-painel > .grid.grid-4 .stat:not(.income):not(.expense):not(.balance) .value{
   color:var(--ui-number-vibrant);
-  text-shadow:0 0 14px rgba(248,251,255,.06);
+  text-shadow:
+    0 0 10px rgba(248,250,252,.10),
+    0 0 24px rgba(248,250,252,.05);
 }
 
-/* Valores auxiliares em outras telas seguem a mesma linguagem de cor. */
-.stat.income .value{color:var(--ui-income-vibrant)}
-.stat.expense .value{color:var(--ui-expense-vibrant)}
-.stat.balance.positive .value{color:var(--ui-balance-vibrant)}
-.stat.balance.negative .value{color:var(--ui-expense-vibrant)}
+/* Pendências em amarelo, seguindo o visual aprovado. */
+.stat.pending .value,
+#pendingTotal,
+#statPendingAmount,
+.pending-value{
+  color:var(--ui-pending-vibrant)!important;
+  text-shadow:
+    0 0 10px rgba(251,191,36,.20),
+    0 0 26px rgba(251,191,36,.10);
+}
 
 @media (max-width:720px){
   #screen-painel > .grid.grid-4 .stat .value{
-    filter:saturate(1.10) brightness(1.04);
+    filter:saturate(1.06) brightness(1.04);
   }
 }
 
