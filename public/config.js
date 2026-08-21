@@ -63,7 +63,7 @@ window.APP_CONFIG = window.APP_CONFIG || {
   if (!document.querySelector('script[data-specular-buttons="true"]')) {
     const specularJs = document.createElement('script');
     specularJs.type = 'module';
-    specularJs.src = './specular-buttons.js?v=1';
+    specularJs.src = './specular-buttons.js?v=3';
     specularJs.dataset.specularButtons = 'true';
     document.head.appendChild(specularJs);
   }
