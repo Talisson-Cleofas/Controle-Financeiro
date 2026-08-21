@@ -1,0 +1,86 @@
+/* UI Lab — paleta financeira neon, sem alterar layout ou lógica. */
+:root{
+  --ui-income-vibrant:#1aff9c;
+  --ui-expense-vibrant:#ff4fa3;
+  --ui-balance-vibrant:#ffffff;
+  --ui-pending-vibrant:#ffd21f;
+  --ui-number-vibrant:#f8fbff;
+}
+
+/* KPIs superiores */
+.dashboard-forecast .mini-kpi strong{
+  color:var(--ui-number-vibrant);
+  font-weight:850;
+  text-shadow:
+    0 0 8px rgba(248,251,255,.18),
+    0 0 18px rgba(248,251,255,.10);
+}
+
+/* Cards financeiros principais */
+#screen-painel > .grid.grid-4 .stat .value{
+  font-weight:850;
+  letter-spacing:-.045em;
+  filter:saturate(1.35) brightness(1.12);
+}
+
+/* Receitas — verde neon */
+#screen-painel > .grid.grid-4 .stat.income .value,
+.stat.income .value{
+  color:var(--ui-income-vibrant);
+  text-shadow:
+    0 0 8px rgba(26,255,156,.34),
+    0 0 18px rgba(26,255,156,.24),
+    0 0 32px rgba(26,255,156,.14);
+}
+
+/* Despesas — rosa neon */
+#screen-painel > .grid.grid-4 .stat.expense .value,
+.stat.expense .value{
+  color:var(--ui-expense-vibrant);
+  text-shadow:
+    0 0 8px rgba(255,79,163,.34),
+    0 0 18px rgba(255,79,163,.24),
+    0 0 32px rgba(255,79,163,.14);
+}
+
+/* Saldo — branco intenso com glow */
+#screen-painel > .grid.grid-4 .stat.balance.positive .value,
+#screen-painel > .grid.grid-4 .stat.balance.negative .value,
+.stat.balance.positive .value,
+.stat.balance.negative .value{
+  color:var(--ui-balance-vibrant);
+  text-shadow:
+    0 0 8px rgba(255,255,255,.24),
+    0 0 18px rgba(255,255,255,.14),
+    0 0 32px rgba(255,255,255,.08);
+}
+
+/* Contagens e valores neutros */
+#screen-painel > .grid.grid-4 .stat:not(.income):not(.expense):not(.balance) .value{
+  color:var(--ui-number-vibrant);
+  text-shadow:
+    0 0 8px rgba(248,251,255,.16),
+    0 0 18px rgba(248,251,255,.08);
+}
+
+/* Pendências — amarelo neon */
+.stat.pending .value,
+#pendingTotal,
+#statPendingAmount,
+.pending-value{
+  color:var(--ui-pending-vibrant)!important;
+  text-shadow:
+    0 0 8px rgba(255,210,31,.34),
+    0 0 18px rgba(255,210,31,.24),
+    0 0 32px rgba(255,210,31,.14);
+}
+
+@media (max-width:720px){
+  #screen-painel > .grid.grid-4 .stat .value{
+    filter:saturate(1.28) brightness(1.08);
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  #screen-painel > .grid.grid-4 .stat .value{filter:none}
+}

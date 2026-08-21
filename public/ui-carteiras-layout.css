@@ -1,0 +1,130 @@
+/* UI Lab — layout mais espaçoso e responsivo para Carteiras e Cartões. */
+#screen-carteiras > .grid.grid-2:first-child{
+  grid-template-columns:1fr!important;
+  gap:20px!important;
+  margin-bottom:20px!important;
+}
+
+#screen-carteiras > .grid.grid-2:first-child > .card{
+  width:100%;
+  min-width:0;
+  padding:28px 30px;
+}
+
+#screen-carteiras > .grid.grid-2:first-child .card-title{
+  margin-bottom:24px;
+}
+
+#screen-carteiras > .grid.grid-2:first-child .card-title h2{
+  font-size:20px;
+}
+
+#screen-carteiras > .grid.grid-2:first-child .card-title p{
+  margin-top:6px;
+  line-height:1.5;
+}
+
+#screen-carteiras .wallet-form,
+#screen-carteiras .card-form{
+  width:100%;
+  min-width:0;
+  align-items:end;
+}
+
+#screen-carteiras .wallet-form{
+  grid-template-columns:
+    minmax(0,1.65fr)
+    minmax(150px,1fr)
+    minmax(150px,1.05fr)
+    minmax(130px,.72fr)
+    minmax(150px,.82fr);
+  gap:18px;
+}
+
+#screen-carteiras .card-form{
+  grid-template-columns:
+    minmax(0,1.45fr)
+    minmax(0,1.05fr)
+    minmax(130px,.82fr)
+    minmax(130px,.82fr)
+    minmax(130px,.78fr)
+    minmax(160px,.9fr);
+  gap:18px;
+}
+
+#screen-carteiras .wallet-form .field,
+#screen-carteiras .card-form .field,
+#screen-carteiras .wallet-form .ui-modern-select,
+#screen-carteiras .card-form .ui-modern-select{
+  min-width:0;
+  width:100%;
+}
+
+#screen-carteiras .wallet-form input,
+#screen-carteiras .card-form input,
+#screen-carteiras .wallet-form .ui-modern-select__trigger,
+#screen-carteiras .card-form .ui-modern-select__trigger{
+  width:100%;
+  min-width:0;
+  min-height:50px;
+}
+
+#screen-carteiras .wallet-form .btn,
+#screen-carteiras .card-form .btn{
+  width:100%;
+  min-width:0;
+  min-height:50px;
+  padding-left:18px;
+  padding-right:18px;
+  white-space:nowrap;
+}
+
+@media(max-width:1380px){
+  #screen-carteiras .wallet-form{
+    grid-template-columns:minmax(0,1.4fr) minmax(145px,.9fr) minmax(150px,1fr) minmax(120px,.7fr) minmax(145px,.8fr);
+    gap:14px;
+  }
+
+  #screen-carteiras .card-form{
+    grid-template-columns:minmax(0,1.25fr) minmax(0,.95fr) minmax(120px,.78fr) minmax(120px,.78fr) minmax(120px,.72fr) minmax(150px,.88fr);
+    gap:14px;
+  }
+}
+
+@media(max-width:1120px){
+  #screen-carteiras .wallet-form,
+  #screen-carteiras .card-form{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px 18px;
+  }
+
+  #screen-carteiras .wallet-form .btn,
+  #screen-carteiras .card-form .btn{
+    grid-column:1/-1;
+  }
+}
+
+@media(max-width:720px){
+  #screen-carteiras > .grid.grid-2:first-child{
+    gap:14px!important;
+  }
+
+  #screen-carteiras > .grid.grid-2:first-child > .card{
+    padding:20px 18px;
+  }
+
+  #screen-carteiras > .grid.grid-2:first-child .card-title{
+    margin-bottom:18px;
+  }
+
+  #screen-carteiras .wallet-form,
+  #screen-carteiras .card-form{
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+
+  #screen-carteiras .wallet-form .btn,
+  #screen-carteiras .card-form .btn{
+    grid-column:auto;
+  }
+}

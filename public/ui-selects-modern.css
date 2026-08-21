@@ -1,0 +1,155 @@
+/* Dropdown moderno e progressivo para selects nativos. */
+.ui-modern-select{
+  position:relative;
+  width:100%;
+  min-width:0;
+  isolation:isolate;
+}
+.ui-modern-select > select{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  z-index:-1!important;
+}
+.ui-modern-select__trigger{
+  width:100%;
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:0 14px 0 16px;
+  border:1px solid rgba(111,140,255,.28);
+  border-radius:14px;
+  background:linear-gradient(145deg,rgba(8,15,27,.96),rgba(13,22,38,.94));
+  color:#f8fafc;
+  font:inherit;
+  font-weight:650;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 8px 22px rgba(0,0,0,.14);
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease,transform .16s ease;
+}
+.ui-modern-select__trigger:hover{
+  border-color:rgba(125,151,255,.48);
+  background:linear-gradient(145deg,rgba(10,18,32,.98),rgba(16,26,44,.96));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 26px rgba(0,0,0,.18);
+}
+.ui-modern-select.is-open .ui-modern-select__trigger,
+.ui-modern-select__trigger:focus-visible{
+  outline:none;
+  border-color:rgba(124,92,255,.82);
+  box-shadow:0 0 0 4px rgba(111,92,255,.12),0 12px 30px rgba(0,0,0,.22);
+}
+.ui-modern-select__value{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.ui-modern-select__chevron{
+  width:28px;
+  height:28px;
+  flex:0 0 28px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  color:#b9c3ff;
+  background:rgba(111,92,255,.10);
+  border:1px solid rgba(124,92,255,.16);
+  transition:transform .2s ease,background .18s ease,color .18s ease;
+}
+.ui-modern-select__chevron::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-right:2px solid currentColor;
+  border-bottom:2px solid currentColor;
+  transform:translateY(-2px) rotate(45deg);
+}
+.ui-modern-select.is-open .ui-modern-select__chevron{
+  transform:rotate(180deg);
+  color:#fff;
+  background:rgba(124,92,255,.20);
+}
+.ui-modern-select__menu{
+  position:fixed;
+  z-index:2147483000;
+  display:none;
+  overflow:auto;
+  padding:7px;
+  border:1px solid rgba(111,140,255,.28);
+  border-radius:14px;
+  background:linear-gradient(160deg,rgba(9,16,29,.995),rgba(13,20,35,.995));
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 24px 70px rgba(0,0,0,.48),0 0 0 1px rgba(124,92,255,.06),inset 0 1px 0 rgba(255,255,255,.05);
+  transform-origin:top center;
+  animation:uiSelectIn .16s ease both;
+  overscroll-behavior:contain;
+}
+.ui-modern-select__menu.is-open{display:block}
+.ui-modern-select__menu.opens-up{transform-origin:bottom center}
+@keyframes uiSelectIn{
+  from{opacity:0;transform:translateY(-5px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+.ui-modern-select__menu.opens-up{animation-name:uiSelectInUp}
+@keyframes uiSelectInUp{
+  from{opacity:0;transform:translateY(5px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+.ui-modern-select__option{
+  width:100%;
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:9px 11px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:#d9e0ee;
+  font:inherit;
+  font-size:14px;
+  font-weight:580;
+  text-align:left;
+  cursor:pointer;
+  transition:background .14s ease,color .14s ease,transform .14s ease;
+}
+.ui-modern-select__option:hover,
+.ui-modern-select__option.is-highlighted{
+  color:#fff;
+  background:linear-gradient(135deg,rgba(91,124,250,.16),rgba(124,58,237,.15));
+}
+.ui-modern-select__option.is-selected{
+  color:#fff;
+  background:linear-gradient(135deg,rgba(91,124,250,.28),rgba(124,58,237,.26));
+  box-shadow:inset 0 0 0 1px rgba(124,140,255,.16);
+}
+.ui-modern-select__option.is-selected::after{
+  content:"✓";
+  color:#a7f3d0;
+  font-weight:900;
+}
+.ui-modern-select__option:disabled{
+  opacity:.42;
+  cursor:not-allowed;
+}
+.ui-modern-select__menu::-webkit-scrollbar{width:8px}
+.ui-modern-select__menu::-webkit-scrollbar-track{background:transparent}
+.ui-modern-select__menu::-webkit-scrollbar-thumb{background:rgba(148,163,184,.20);border-radius:999px}
+.ui-modern-select__menu::-webkit-scrollbar-thumb:hover{background:rgba(148,163,184,.32)}
+.ui-modern-select.is-disabled .ui-modern-select__trigger{opacity:.5;cursor:not-allowed}
+@media(max-width:720px){
+  .ui-modern-select__trigger{min-height:46px;border-radius:13px}
+  .ui-modern-select__menu{max-height:42vh}
+}
+@media(prefers-reduced-motion:reduce){
+  .ui-modern-select__trigger,.ui-modern-select__chevron,.ui-modern-select__option{transition:none!important}
+  .ui-modern-select__menu{animation:none!important}
+}
