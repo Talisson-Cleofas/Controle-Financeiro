@@ -83,4 +83,20 @@ window.APP_CONFIG = window.APP_CONFIG || {
     bentoJs.dataset.magicBento = 'true';
     document.head.appendChild(bentoJs);
   }
+
+  if (!document.querySelector('link[data-modern-selects="true"]')) {
+    const selectCss = document.createElement('link');
+    selectCss.rel = 'stylesheet';
+    selectCss.href = './ui-selects-modern.css?v=1';
+    selectCss.dataset.modernSelects = 'true';
+    document.head.appendChild(selectCss);
+  }
+
+  if (!document.querySelector('script[data-modern-selects="true"]')) {
+    const selectJs = document.createElement('script');
+    selectJs.src = './ui-selects-modern.js?v=1';
+    selectJs.defer = true;
+    selectJs.dataset.modernSelects = 'true';
+    document.head.appendChild(selectJs);
+  }
 })();
