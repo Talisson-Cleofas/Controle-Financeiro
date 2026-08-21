@@ -1,0 +1,37 @@
+/* React Bits SpecularButton — adaptado ao frontend HTML/CSS/JS do app. */
+.ui-specular-button{
+  --sb-radius:18px;
+  --sb-tint:#ffffff;
+  --sb-tint-opacity:0;
+  --sb-blur:0px;
+  --sb-text-color:#f5f5f5;
+  position:relative!important;
+  isolation:isolate;
+  overflow:visible!important;
+  color:var(--sb-text-color);
+  border-radius:var(--sb-radius)!important;
+  backdrop-filter:blur(var(--sb-blur));
+  -webkit-backdrop-filter:blur(var(--sb-blur));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 24px rgba(0,0,0,.25);
+  transition:transform .15s ease,filter .15s ease,box-shadow .2s ease!important;
+}
+.ui-specular-button:active{transform:scale(.97)}
+.ui-specular-button:focus-visible{outline:2px solid rgba(245,245,245,.62);outline-offset:3px}
+.ui-specular-button:disabled{opacity:.55;cursor:default}
+.ui-specular-button:disabled:active{transform:none}
+.ui-specular-button__fx{
+  position:absolute;
+  inset:-20px;
+  pointer-events:none;
+  z-index:1;
+  border-radius:calc(var(--sb-radius) + 20px);
+}
+.ui-specular-button__fx canvas{display:block;width:100%;height:100%}
+.ui-specular-button > :not(.ui-specular-button__fx){position:relative;z-index:2}
+/* Caso o botão tenha apenas texto solto, mantém conteúdo acima do canvas. */
+.ui-specular-button{z-index:0}
+.ui-specular-button__label-proxy{position:relative;z-index:2;pointer-events:none}
+@media (prefers-reduced-motion:reduce){
+  .ui-specular-button{transition:none!important}
+  .ui-specular-button__fx{display:none!important}
+}
