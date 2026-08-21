@@ -71,7 +71,7 @@ window.APP_CONFIG = window.APP_CONFIG || {
   if (!document.querySelector('link[data-magic-bento="true"]')) {
     const bentoCss = document.createElement('link');
     bentoCss.rel = 'stylesheet';
-    bentoCss.href = './magic-bento.css?v=2';
+    bentoCss.href = './magic-bento.css?v=3';
     bentoCss.dataset.magicBento = 'true';
     document.head.appendChild(bentoCss);
   }
@@ -79,7 +79,7 @@ window.APP_CONFIG = window.APP_CONFIG || {
   if (!document.querySelector('script[data-magic-bento="true"]')) {
     const bentoJs = document.createElement('script');
     bentoJs.type = 'module';
-    bentoJs.src = './magic-bento.js?v=2';
+    bentoJs.src = './magic-bento.js?v=3';
     bentoJs.dataset.magicBento = 'true';
     document.head.appendChild(bentoJs);
   }
@@ -103,7 +103,7 @@ window.APP_CONFIG = window.APP_CONFIG || {
   if (!document.querySelector('link[data-carteiras-layout="true"]')) {
     const carteirasCss = document.createElement('link');
     carteirasCss.rel = 'stylesheet';
-    carteirasCss.href = './ui-carteiras-layout.css?v=1';
+    carteirasCss.href = './ui-carteiras-layout.css?v=2';
     carteirasCss.dataset.carteirasLayout = 'true';
     document.head.appendChild(carteirasCss);
   }
