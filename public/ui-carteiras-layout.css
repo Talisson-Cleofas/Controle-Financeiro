@@ -1,4 +1,4 @@
-/* UI Lab — layout mais espaçoso para Carteiras e Cartões. */
+/* UI Lab — layout mais espaçoso e responsivo para Carteiras e Cartões. */
 #screen-carteiras > .grid.grid-2:first-child{
   grid-template-columns:1fr!important;
   gap:20px!important;
@@ -7,6 +7,7 @@
 
 #screen-carteiras > .grid.grid-2:first-child > .card{
   width:100%;
+  min-width:0;
   padding:28px 30px;
 }
 
@@ -23,50 +24,74 @@
   line-height:1.5;
 }
 
+#screen-carteiras .wallet-form,
+#screen-carteiras .card-form{
+  width:100%;
+  min-width:0;
+  align-items:end;
+}
+
 #screen-carteiras .wallet-form{
   grid-template-columns:
-    minmax(260px,1.65fr)
-    minmax(200px,1fr)
-    minmax(220px,1.15fr)
-    minmax(160px,.8fr)
-    auto;
-  gap:20px;
-  align-items:end;
+    minmax(0,1.65fr)
+    minmax(150px,1fr)
+    minmax(150px,1.05fr)
+    minmax(130px,.72fr)
+    minmax(150px,.82fr);
+  gap:18px;
 }
 
 #screen-carteiras .card-form{
   grid-template-columns:
-    minmax(250px,1.5fr)
-    minmax(220px,1.05fr)
-    minmax(170px,.82fr)
-    minmax(170px,.82fr)
-    minmax(160px,.78fr)
-    auto;
-  gap:20px;
-  align-items:end;
+    minmax(0,1.45fr)
+    minmax(0,1.05fr)
+    minmax(130px,.82fr)
+    minmax(130px,.82fr)
+    minmax(130px,.78fr)
+    minmax(160px,.9fr);
+  gap:18px;
 }
 
 #screen-carteiras .wallet-form .field,
-#screen-carteiras .card-form .field{
+#screen-carteiras .card-form .field,
+#screen-carteiras .wallet-form .ui-modern-select,
+#screen-carteiras .card-form .ui-modern-select{
   min-width:0;
+  width:100%;
 }
 
 #screen-carteiras .wallet-form input,
 #screen-carteiras .card-form input,
 #screen-carteiras .wallet-form .ui-modern-select__trigger,
 #screen-carteiras .card-form .ui-modern-select__trigger{
+  width:100%;
+  min-width:0;
   min-height:50px;
 }
 
 #screen-carteiras .wallet-form .btn,
 #screen-carteiras .card-form .btn{
-  min-width:164px;
+  width:100%;
+  min-width:0;
   min-height:50px;
-  padding-left:20px;
-  padding-right:20px;
+  padding-left:18px;
+  padding-right:18px;
+  white-space:nowrap;
 }
 
-@media(max-width:1180px){
+@media(max-width:1380px){
+  #screen-carteiras .wallet-form{
+    grid-template-columns:minmax(0,1.4fr) minmax(145px,.9fr) minmax(150px,1fr) minmax(120px,.7fr) minmax(145px,.8fr);
+    gap:14px;
+  }
+
+  #screen-carteiras .card-form{
+    grid-template-columns:minmax(0,1.25fr) minmax(0,.95fr) minmax(120px,.78fr) minmax(120px,.78fr) minmax(120px,.72fr) minmax(150px,.88fr);
+    gap:14px;
+  }
+}
+
+@media(max-width:1120px){
   #screen-carteiras .wallet-form,
   #screen-carteiras .card-form{
     grid-template-columns:repeat(2,minmax(0,1fr));
@@ -76,7 +101,6 @@
   #screen-carteiras .wallet-form .btn,
   #screen-carteiras .card-form .btn{
     grid-column:1/-1;
-    width:100%;
   }
 }
 
