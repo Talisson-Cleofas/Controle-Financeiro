@@ -4,17 +4,35 @@ window.APP_CONFIG = window.APP_CONFIG || {
 
 // UI Lab: carrega a camada visual somente nesta branch de preview.
 (function loadUiLabStyles(){
-  if (document.querySelector('link[data-ui-lab="true"]')) return;
+  if (!document.querySelector('link[data-ui-lab="true"]')) {
+    const lab = document.createElement('link');
+    lab.rel = 'stylesheet';
+    lab.href = './ui-lab.css?v=current-production';
+    lab.dataset.uiLab = 'true';
+    document.head.appendChild(lab);
+  }
 
-  const lab = document.createElement('link');
-  lab.rel = 'stylesheet';
-  lab.href = './ui-lab.css?v=current-production';
-  lab.dataset.uiLab = 'true';
-  document.head.appendChild(lab);
+  if (!document.querySelector('link[data-ui-lab-values="true"]')) {
+    const vibrant = document.createElement('link');
+    vibrant.rel = 'stylesheet';
+    vibrant.href = './ui-values-vibrant.css?v=2';
+    vibrant.dataset.uiLabValues = 'true';
+    document.head.appendChild(vibrant);
+  }
 
-  const vibrant = document.createElement('link');
-  vibrant.rel = 'stylesheet';
-  vibrant.href = './ui-values-vibrant.css?v=1';
-  vibrant.dataset.uiLabValues = 'true';
-  document.head.appendChild(vibrant);
+  if (!document.querySelector('link[data-ui-budget-stepper="true"]')) {
+    const stepperCss = document.createElement('link');
+    stepperCss.rel = 'stylesheet';
+    stepperCss.href = './ui-budget-stepper.css?v=1';
+    stepperCss.dataset.uiBudgetStepper = 'true';
+    document.head.appendChild(stepperCss);
+  }
+
+  if (!document.querySelector('script[data-ui-budget-stepper="true"]')) {
+    const stepperJs = document.createElement('script');
+    stepperJs.src = './ui-budget-stepper.js?v=1';
+    stepperJs.defer = true;
+    stepperJs.dataset.uiBudgetStepper = 'true';
+    document.head.appendChild(stepperJs);
+  }
 })();
