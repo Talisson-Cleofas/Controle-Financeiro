@@ -99,4 +99,12 @@ window.APP_CONFIG = window.APP_CONFIG || {
     selectJs.dataset.modernSelects = 'true';
     document.head.appendChild(selectJs);
   }
+
+  if (!document.querySelector('link[data-carteiras-layout="true"]')) {
+    const carteirasCss = document.createElement('link');
+    carteirasCss.rel = 'stylesheet';
+    carteirasCss.href = './ui-carteiras-layout.css?v=1';
+    carteirasCss.dataset.carteirasLayout = 'true';
+    document.head.appendChild(carteirasCss);
+  }
 })();
