@@ -13,6 +13,8 @@ import dataRoutes from './routes/data.js';
 import adminRoutes from './routes/admin.js';
 import billingRoutes from './routes/billing.js';
 import { ensurePaymentIndexes } from './models/Payment.js';
+import WebhookJob from './models/WebhookJob.js';
+import { startBillingWorker } from './services/billing-webhooks.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI não configurado.');
@@ -29,7 +31,12 @@ const allowedOrigins = String(process.env.CORS_ORIGINS || process.env.FRONTEND_U
 if (isProduction && !allowedOrigins.length) throw new Error('CORS_ORIGINS ou FRONTEND_URL deve ser configurado em produção.');
 
 await mongoose.connect(process.env.MONGODB_URI, mongoDbName ? { dbName: mongoDbName } : {});
+const topology = await mongoose.connection.db.admin().command({ hello: 1 });
+if (!topology.setName && topology.msg !== 'isdbgrid') {
+  throw new Error('Pagamentos exigem MongoDB replica set (por exemplo Atlas) para transações atômicas.');
+}
 await ensurePaymentIndexes();
+await WebhookJob.init();
 
 const app = express();
 app.disable('x-powered-by');
@@ -83,10 +90,12 @@ app.use((error, req, res, next) => {
 
 const port = Number(process.env.PORT || 3000);
 const server = app.listen(port, () => console.log(`Servidor iniciado na porta ${port}`));
+const stopBillingWorker = startBillingWorker();
 
 async function shutdown(signal) {
   console.log(`${signal} recebido. Encerrando servidor.`);
   server.close(async () => {
+    await stopBillingWorker();
     await mongoose.disconnect();
     process.exit(0);
   });

@@ -1,0 +1,227 @@
+import test, { before, after, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import express from 'express';
+import mongoose from 'mongoose';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
+import Payment from '../src/models/Payment.js';
+import User from '../src/models/User.js';
+import WebhookJob from '../src/models/WebhookJob.js';
+import { processPayment, processOrder } from '../src/services/payment-processing.js';
+import { createWebhookHandler, persistWebhook, runNextWebhookJob } from '../src/services/billing-webhooks.js';
+
+const DAY = 86400000;
+const start = new Date('2026-09-01T12:00:00Z');
+const day = n => new Date(start.getTime() + n * DAY);
+let replica;
+before(async () => {
+  delete process.env.SMTP_HOST;
+  replica = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+  // Always an ephemeral local replica set, never MONGODB_URI from the environment.
+  await mongoose.connect(replica.getUri(), { dbName: 'billing_tests' });
+  await Promise.all([User.init(), Payment.init(), WebhookJob.init()]);
+});
+after(async () => { await mongoose.disconnect(); await replica?.stop(); });
+beforeEach(async () => {
+  process.env.MERCADO_PAGO_ENV = 'production';
+  process.env.MERCADO_PAGO_WEBHOOK_SECRET = 'local-test-only';
+  delete process.env.PLAN_MONTHLY_PRICE;
+  await Promise.all([Payment.deleteMany({}), User.deleteMany({}), WebhookJob.deleteMany({})]);
+});
+
+const account = (extra = {}) => User.create({ name: 'Teste', email: `${crypto.randomUUID()}@example.invalid`, passwordHash: 'test-only', ...extra });
+const remote = (user, extra = {}) => ({ id: '1001', external_reference: `${user.id}:monthly:test`, status: 'approved', transaction_amount: 19.9, currency_id: 'BRL', ...extra });
+const latest = user => User.findById(user._id);
+
+test('dez confirmações simultâneas concedem apenas um período', async () => {
+  const user = await account();
+  await Promise.all(Array.from({ length: 10 }, () => processPayment(remote(user), { now: start })));
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(30).getTime());
+  assert.equal(await Payment.countDocuments(), 1);
+});
+
+test('duas compras simultâneas preservam os dois períodos', async () => {
+  const user = await account();
+  await Promise.all(['1001', '1002'].map(id => processPayment(remote(user, { id, external_reference: `${user.id}:monthly:${id}` }), { now: start })));
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(60).getTime());
+});
+
+test('falha entre a gravação da conta e do pagamento reverte ambos', async () => {
+  const user = await account();
+  const original = Payment.prototype.save;
+  Payment.prototype.save = async function () { throw new Error('falha simulada'); };
+  try { await assert.rejects(processPayment(remote(user), { now: start }), /falha simulada/); }
+  finally { Payment.prototype.save = original; }
+  assert.equal((await latest(user)).status, 'trial');
+  assert.equal((await latest(user)).subscriptionEndsAt, undefined);
+  assert.equal(await Payment.countDocuments(), 0);
+  await processPayment(remote(user), { now: start });
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(30).getTime());
+});
+
+test('estorno integral remove apenas tempo não consumido e não reativa por evento antigo', async () => {
+  const user = await account();
+  await processPayment(remote(user), { now: start });
+  const refund = remote(user, { status: 'refunded', transaction_amount_refunded: 19.9 });
+  await processPayment(refund, { now: day(10) });
+  await processPayment(refund, { now: day(10) });
+  await processPayment(remote(user), { now: day(11) });
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(10).getTime());
+  assert.equal((await latest(user)).status, 'past_due');
+  assert.equal((await Payment.findOne()).status, 'refunded');
+});
+
+test('estornos sucessivos preservam e depois removem somente suas próprias renovações', async () => {
+  const user = await account();
+  await processPayment(remote(user), { now: start });
+  await processPayment(remote(user, { id: '1002', external_reference: `${user.id}:monthly:second` }), { now: day(1) });
+  await processPayment(remote(user, { status: 'refunded' }), { now: day(10) });
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(40).getTime());
+  const second = await Payment.findOne({ externalId: '1002' });
+  assert.equal(second.licenseStartsAt.getTime(), day(10).getTime());
+  assert.equal(second.licenseEndsAt.getTime(), day(40).getTime());
+  await processPayment(remote(user, { id: '1002', external_reference: `${user.id}:monthly:second`, status: 'charged_back' }), { now: day(15) });
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(15).getTime());
+});
+
+test('estorno de período já consumido não desconta nova compra', async () => {
+  const user = await account();
+  await processPayment(remote(user), { now: start });
+  await processPayment(remote(user, { id: '1002', external_reference: `${user.id}:monthly:second` }), { now: day(40) });
+  await processPayment(remote(user, { status: 'refunded' }), { now: day(41) });
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(70).getTime());
+});
+
+test('estorno parcial e licença alterada manualmente exigem revisão sem desconto arbitrário', async () => {
+  const user = await account();
+  await processPayment(remote(user), { now: start });
+  await processPayment(remote(user, { transaction_amount_refunded: 5 }), { now: day(1) });
+  assert.equal((await Payment.findOne()).needsReview, true);
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(30).getTime());
+  await User.updateOne({ _id: user._id }, { subscriptionEndsAt: day(100) });
+  await processPayment(remote(user, { status: 'refunded' }), { now: day(2) });
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(100).getTime());
+  assert.match((await Payment.findOne()).reviewReason, /fora do fluxo/);
+});
+
+test('pagamento legado estornado é atualizado e sinalizado sem reconstruir dias por suposição', async () => {
+  const user = await account({ status: 'active', plan: 'monthly', subscriptionEndsAt: day(30) });
+  await Payment.create({ userId: user._id, externalId: '1001', plan: 'monthly', amount: 19.9, status: 'approved', processedAt: start });
+  await processPayment(remote(user, { status: 'refunded' }), { now: day(2) });
+  const payment = await Payment.findOne();
+  assert.equal(payment.status, 'refunded');
+  assert.equal(payment.needsReview, true);
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(30).getTime());
+});
+
+test('valor e moeda inválidos não concedem acesso', async () => {
+  const user = await account();
+  for (const extra of [{ transaction_amount: 0 }, { transaction_amount: 1 }, { currency_id: 'USD' }, { currency_id: undefined }]) {
+    await assert.rejects(processPayment(remote(user, extra), { now: start }));
+  }
+  assert.equal((await latest(user)).status, 'trial');
+  assert.equal(await Payment.countDocuments(), 0);
+});
+
+test('preço contratado permanece válido após mudança de tabela e checkout usa o mesmo registro', async () => {
+  const user = await account();
+  const intent = await Payment.create({ userId: user._id, plan: 'monthly', amount: 19.9, expectedAmount: 19.9, externalReference: `${user.id}:monthly:test`, preferenceId: 'pref-test' });
+  process.env.PLAN_MONTHLY_PRICE = '25.00';
+  const payment = await processPayment(remote(user), { now: start });
+  assert.equal(String(payment._id), String(intent._id));
+  assert.equal(await Payment.countDocuments(), 1);
+});
+
+test('pagamento não desbloqueia conta administrativa bloqueada nem remove acesso vitalício', async () => {
+  const blocked = await account({ status: 'blocked' });
+  await processPayment(remote(blocked), { now: start });
+  assert.equal((await latest(blocked)).status, 'blocked');
+  const lifetime = await account({ plan: 'lifetime', status: 'active' });
+  await processPayment(remote(lifetime, { id: '1002' }), { now: start });
+  assert.equal((await latest(lifetime)).plan, 'lifetime');
+});
+
+test('Orders continuam restritas ao sandbox e não aceitam pagamento incompleto', async () => {
+  const user = await account();
+  const order = { id: 'ORD1', external_reference: `${user.id}_monthly_test`, status: 'processed', total_amount: '50.00', total_paid_amount: '50.00', transactions: { payments: [{ id: 'PAY1', status: 'processed' }] } };
+  assert.throws(() => processOrder(order, { now: start }), /produção/);
+  process.env.MERCADO_PAGO_ENV = 'test';
+  assert.throws(() => processOrder({ ...order, total_paid_amount: '10.00' }), /integralmente/);
+  await processOrder(order, { now: start });
+  await processOrder(order, { now: start });
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(30).getTime());
+});
+
+test('worker persiste falha e nova tentativa aplica licença uma vez', async () => {
+  const user = await account();
+  const job = await persistWebhook({ resourceId: '1001', topic: 'payment', eventId: 'evt1' });
+  const now = new Date();
+  await runNextWebhookJob({ now, fetchRemote: async () => { throw new Error('timeout simulado'); } });
+  assert.equal((await WebhookJob.findById(job._id)).status, 'retry');
+  await runNextWebhookJob({ now: new Date(now.getTime() + 10000), fetchRemote: async () => remote(user) });
+  assert.equal((await WebhookJob.findById(job._id)).status, 'processed');
+  assert.equal(await Payment.countDocuments({ processedAt: { $exists: true } }), 1);
+});
+
+test('reinício após conceder licença recupera lease vencido sem duplicar período', async () => {
+  const user = await account();
+  await processPayment(remote(user), { now: start });
+  await WebhookJob.create({ key: 'crashed', resourceId: '1001', topic: 'payment', status: 'processing', lockToken: 'old', lockedUntil: new Date(0), attempts: 1 });
+  await runNextWebhookJob({ fetchRemote: async () => remote(user) });
+  assert.equal((await WebhookJob.findOne()).status, 'processed');
+  assert.equal((await latest(user)).subscriptionEndsAt.getTime(), day(30).getTime());
+});
+
+test('dois workers não processam o mesmo lease e eventos exauridos ficam visíveis', async () => {
+  await persistWebhook({ resourceId: '1001', topic: 'payment', eventId: 'evt1' });
+  let calls = 0;
+  const options = { fetchRemote: async () => { calls++; return { id: '1001' }; }, handlePayment: async () => {} };
+  await Promise.all([runNextWebhookJob(options), runNextWebhookJob(options)]);
+  assert.equal(calls, 1);
+  await WebhookJob.create({ key: 'last-attempt', resourceId: '1002', topic: 'payment', status: 'retry', availableAt: new Date(0), attempts: 7 });
+  await runNextWebhookJob({ fetchRemote: async () => { throw new Error('falha'); } });
+  assert.equal((await WebhookJob.findOne({ key: 'last-attempt' })).status, 'dead');
+});
+
+async function http(handler, run) {
+  const app = express();
+  app.use(express.json());
+  app.post('/webhook', handler);
+  const server = await new Promise(resolve => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
+  try { await run(`http://127.0.0.1:${server.address().port}/webhook`); }
+  finally { await new Promise(resolve => server.close(resolve)); }
+}
+function request(extra = {}) {
+  const ts = '1704908010';
+  const v1 = crypto.createHmac('sha256', 'local-test-only').update(`id:1001;request-id:local;ts:${ts};`).digest('hex');
+  return { method: 'POST', headers: { 'content-type': 'application/json', 'x-signature': `ts=${ts},v1=${v1}`, 'x-request-id': 'local' }, body: JSON.stringify({ id: 'evt1', type: 'payment', data: { id: '1001' } }), ...extra };
+}
+
+test('HTTP confirma apenas após persistir e deduplica a mesma notificação', async () => {
+  await http(createWebhookHandler(), async url => {
+    for (let i = 0; i < 2; i++) {
+      const response = await fetch(url, request());
+      assert.equal(response.status, 202);
+      await response.text();
+      assert.equal(await WebhookJob.countDocuments(), 1);
+    }
+  });
+});
+
+test('HTTP devolve 503 se o armazenamento falhar e rejeita assinatura inválida', async () => {
+  await http(createWebhookHandler({ persist: async () => { throw new Error('banco indisponível'); } }), async url => {
+    assert.equal((await fetch(url, request())).status, 503);
+    assert.equal((await fetch(url, request({ headers: { 'content-type': 'application/json' } }))).status, 401);
+    assert.equal((await fetch(`${url}?data.id=1002`, request())).status, 400);
+  });
+});
+
+test('produção não aceita o bypass de assinatura das Orders de teste', async () => {
+  await http(createWebhookHandler(), async url => {
+    const options = { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'order', data: { id: 'ORD123' } }) };
+    assert.equal((await fetch(url, options)).status, 401);
+    process.env.MERCADO_PAGO_ENV = 'test';
+    assert.equal((await fetch(url, options)).status, 202);
+    assert.equal((await WebhookJob.findOne()).resourceId, 'ORD123');
+  });
+});
