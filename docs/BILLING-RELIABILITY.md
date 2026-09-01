@@ -67,8 +67,15 @@ estornos repetidos/sucessivos, preservação de outras compras, registros legado
 preço contratado, moeda/valor incorretos, recuperação de jobs, leases, resposta HTTP
 após persistência, falha de armazenamento e isolamento do bypass de sandbox.
 
-Na sessão de implementação o MongoDB local foi bloqueado com `open: Operation not
-permitted`. Portanto os testes de integração NÃO foram validados nessa sessão.
-Rodar a suíte completa em ambiente autorizado antes de mesclar ou implantar.
-Depois, validar PIX/cartão e o ciclo de licença em homologação. Cobrança real e deploy
-de produção continuam fora desta alteração.
+Em 01/09/2026 a suíte completa foi executada no GitHub Actions, em runners isolados:
+37 testes passaram, sem falhas nem testes ignorados, em Node 22 e Node 24.
+Evidência: https://github.com/Talisson-Cleofas/Controle-Financeiro/actions/runs/33541902135
+O CI resolveu o bloqueio de permissão do MongoDB no ambiente local sem usar banco real.
+
+O workflow usa permissões somente de leitura, actions fixadas por SHA, MongoDB
+descartável e não recebe credenciais de banco, pagamento ou SMTP.
+
+Esses resultados validam a lógica e as transações com provedor simulado, não uma
+cobrança real. Antes da liberação comercial, validar PIX/cartão e o ciclo de licença
+na homologação conectada ao Mercado Pago. Cobrança real e deploy de produção
+continuam fora desta alteração.

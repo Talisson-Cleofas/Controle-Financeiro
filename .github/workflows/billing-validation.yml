@@ -1,8 +1,6 @@
 name: Billing validation
 
 on:
-  push:
-    branches: [fix/billing-reliable-processing]
   pull_request:
     branches: [feat/comercial-saas-v2]
 
