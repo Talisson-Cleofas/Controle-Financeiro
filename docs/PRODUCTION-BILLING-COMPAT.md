@@ -4,8 +4,10 @@
 
 Adaptação isolada sobre main. Mantém backend/ como raiz no Render, CommonJS,
 MONGO_URI, coleção users/transactions, hash bcrypt, JWT e rotas /api/auth e
-/api/transactions. Nenhum arquivo de public/, ícone, domínio, configuração da
-Vercel ou aplicativo Colo de Deus é substituído. O módulo ESM vive somente em
+/api/transactions. Nenhum menu, ícone, domínio, configuração da
+Vercel ou aplicativo Colo de Deus é substituído. As correções complementares em
+public/ preservam os oito menus, ícones e identidade visual, acrescentam vendas.html
+e substituem somente o sincronizador antigo. O módulo ESM vive somente em
 backend/src/billing; Express 4 encaminha erros assíncronos explicitamente.
 
 ## Implantação segura e acesso
@@ -61,12 +63,31 @@ consumidos; parciais ou alterações manuais são encaminhados para revisão.
 E-mail é opcional via SMTP; não é condição para conceder licença e não há fila
 durável de e-mail. Recuperação de senha não foi adicionada neste patch.
 
-Há uma divergência pré-existente: public/index.html usa /api/data enquanto esse
-backend expõe /api/transactions; links comerciais também precisam ser validados.
-Não foi implementada migração UserData nem modificado o armazenamento do usuário.
-Isso é impedimento para declarar o produto pronto para venda, não motivo para
-trocar o backend inteiro. Validar sincronização, checkout visível, vencimento,
-renovação, recebimento e estorno reais antes de habilitar vendas/bloqueios.
+## Sincronização e renovação
+
+/api/data GET/PUT agora opera sobre a coleção transactions já existente, não
+UserData. User.financialSettings preserva carteiras, recorrências e categorias;
+monthlyBudget continua canônico. IDs antigos são conservados e IDs locais ficam
+em clientId. uiData guarda somente metadados visuais conhecidos. Todos os escritores
+financeiros incrementam financialRevision numa transação, inclusive as rotas
+legadas e orçamento. PUT obsoleto retorna 409 sem sobrescrever dados. Exclusões
+usam deletedAt e podem ser recuperadas; listas/relatórios ignoram removidos.
+
+ATENÇÃO: esta versão exige replica set/Atlas/mongos também com cobrança desligada,
+pois a sincronização depende de transações. O startup verifica essa capacidade;
+não publicar sem confirmar a topologia. Nenhuma migração externa foi executada.
+
+No navegador, erros de conexão não encerram sessão. Cópia local precede substituição,
+conflitos preservam rascunhos e importação de cache sem dono exige confirmação.
+Se faltar espaço para backup, não substitui os dados. Há controle de recarga e
+download das cópias locais. Backups locais permanecem no dispositivo, não são
+enviados a outras contas automaticamente. Revisar retenção antes do lançamento.
+
+/vendas permite login, escolha de planos com preços da API, PIX copia e cola,
+cartão externo e consulta autenticada de pagamentos. Query de retorno não concede
+licença. Cobrança continua opt-in; não houve teste financeiro real. O aviso de
+vencimento não impede leitura/exportação. Validar visualmente o fluxo completo
+em homologação antes de publicar e confirmar recebedor antes de pagamento real.
 
 ## Testes
 

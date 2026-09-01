@@ -5,6 +5,8 @@ const { billingEnabled } = require('./services/billing-access');
 
 async function start() {
   await connectDatabase();
+  const hello = await require('mongoose').connection.db.admin().command({ hello: 1 });
+  if (!hello.setName && hello.msg !== 'isdbgrid') throw new Error('Sincronização exige MongoDB com transações.');
   let stopWorker = () => {};
   if (billingEnabled()) {
     const { initializeBilling } = await import('./billing/initialize.js');

@@ -72,6 +72,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/data', require('./routes/data.routes'));
 
 if (require('./services/billing-access').billingEnabled()) {
   const { default: billingRoutes } = await import('./billing/routes/billing.js');
@@ -89,4 +90,3 @@ app.use(errorHandler);
 return app;
 }
 module.exports = { createApp };
-

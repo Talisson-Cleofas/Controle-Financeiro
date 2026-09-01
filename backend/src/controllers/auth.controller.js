@@ -80,10 +80,11 @@ async function updateSettings(req, res, next) {
       return fail(res, 400, 'Meta mensal inválida.');
     }
 
-    req.user.monthlyBudget = monthlyBudget;
-    await req.user.save();
-
-    return res.json({ user: req.user.toSafeJSON() });
+    const { result: user } = await require('../services/financial-data').financialWrite(req.user._id, async (session, current) => {
+      current.monthlyBudget = monthlyBudget;
+      return current;
+    });
+    return res.json({ user: user.toSafeJSON() });
   } catch (error) {
     next(error);
   }

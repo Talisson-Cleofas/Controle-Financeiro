@@ -1,4 +1,4 @@
-const CACHE_NAME = 'controle-financeiro-saas-v4-original-icon';
+const CACHE_NAME = 'controle-financeiro-saas-v5-sync-billing';
 const APP_SHELL = [
   '/manifest.webmanifest',
   '/assets/icons/icon-192.png?v=original-2026',
@@ -53,7 +53,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') return;
 
   // Nunca intercepta API, autenticação, cobrança ou dados privados.
-  if (url.pathname.startsWith('/api/') || url.pathname === '/config.js') return;
+  if (url.pathname.startsWith('/api/') || ['/config.js','/cloud-sync.js','/billing-page.js'].includes(url.pathname)) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

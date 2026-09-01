@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Planos e renovação • Controle Financeiro</title>
+<meta name="theme-color" content="#0b0f17"><link rel="icon" href="/assets/icons/favicon-32.png"><link rel="stylesheet" href="/billing.css"><script src="/config.js"></script><script src="/billing-page.js" defer></script></head>
+<body><main><header><a href="/" class="brand"><img src="/assets/icons/icon-192.png" alt="" width="48" height="48">Controle Financeiro</a><a href="/">Voltar ao aplicativo</a></header>
+<h1>Planos e renovação</h1><p id="account">Entre na sua conta para contratar ou renovar.</p>
+<form id="login" hidden><h2>Entrar</h2><label>E-mail<input id="email" type="email" autocomplete="username" required></label><label>Senha<input id="password" type="password" autocomplete="current-password" required></label><button>Entrar</button><a href="/">Criar uma conta no aplicativo</a></form>
+<p id="message" role="status" aria-live="polite">Carregando planos…</p>
+<form id="purchase" hidden><fieldset><legend>Escolha o período</legend><div id="plans" class="plans"></div></fieldset>
+<fieldset><legend>Forma de pagamento</legend><label class="option"><input type="radio" name="method" value="pix" checked>PIX</label><label class="option"><input type="radio" name="method" value="card">Cartão no Mercado Pago</label></fieldset>
+<label id="cpfLabel">CPF do pagador<input id="cpf" inputmode="numeric" autocomplete="off" maxlength="14" aria-describedby="cpfHint"><small id="cpfHint">Necessário para gerar a cobrança PIX.</small></label>
+<p id="summary"></p><p>Confira o valor e o recebedor no banco ou no Mercado Pago antes de confirmar o pagamento.</p><button id="pay" type="submit">Gerar PIX</button></form>
+<section id="pix" hidden aria-labelledby="pixTitle"><h2 id="pixTitle">Pague com PIX</h2><p id="pixInfo"></p><img id="qr" alt="QR Code desta cobrança PIX" width="240" height="240" hidden><label>PIX copia e cola<textarea id="pixCode" readonly rows="4"></textarea></label><button id="copy" type="button">Copiar código PIX</button></section>
+<section id="history" hidden><h2>Seus pagamentos</h2><button id="refresh" type="button">Verificar pagamento</button><p>O acesso só é atualizado após confirmação do Mercado Pago. O retorno do checkout, sozinho, não comprova o pagamento.</p><ul id="payments"></ul></section>
+</main></body></html>

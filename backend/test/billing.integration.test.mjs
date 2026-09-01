@@ -12,6 +12,7 @@ import { createWebhookHandler, persistWebhook, runNextWebhookJob } from '../src/
 import { createApp } from '../src/app.js';
 import jwt from 'jsonwebtoken';
 import Transaction from '../src/models/Transaction.js';
+import financialData from '../src/services/financial-data.js';
 
 const DAY = 86400000;
 const start = new Date('2026-09-01T12:00:00Z');
@@ -118,6 +119,69 @@ test('Express 4 trata falha assíncrona do checkout sem travar e impede consulta
 const account = (extra = {}) => User.create({ name: 'Teste', email: `${crypto.randomUUID()}@example.invalid`, passwordHash: 'test-only', status: 'trial', billingEnrolledAt: start, ...extra });
 const remote = (user, extra = {}) => ({ id: '1001', external_reference: `${user.id}:monthly:test`, status: 'approved', transaction_amount: 19.9, currency_id: 'BRL', ...extra });
 const latest = user => User.findById(user._id);
+
+const syncRow = (id='local-1', extra={}) => ({id,type:'income',description:'Receita',amount:200,category:'Outros',date:'2026-09-01',status:'pending',walletId:'bb',...extra});
+test('sincronização usa os lançamentos existentes sem criar outro banco de dados', async () => {
+  const user=await account({monthlyBudget:800});
+  const row=await Transaction.create({user:user.id,...syncRow()});
+  const initial=await financialData.readData(user.id);
+  assert.equal(initial.transactions[0].id,row.id);
+  assert.equal(initial.settings.budget,800);
+  const input={...initial,transactions:[{...initial.transactions[0],status:'paid',walletId:'bb',planned:true}],settings:{budget:900,wallets:[{id:'bb',name:'Banco'}],recurring:[]}};
+  const result=await financialData.writeData(user.id,input);
+  assert.equal(result.revision,1);
+  const saved=await financialData.readData(user.id);
+  assert.equal(saved.transactions[0].walletId,'bb');
+  assert.equal(saved.transactions[0].planned,true);
+  assert.equal(await Transaction.countDocuments({user:user.id}),1);
+  assert.equal((await latest(user)).monthlyBudget,900);
+  await withApp(async url=>{const response=await fetch(url+'/api/transactions/summary?month=2026-09',{headers:headersFor(user)});assert.equal((await response.json()).totals.balance,200);});
+});
+
+test('duas sincronizações concorrentes: uma vence e outra recebe conflito sem perder dados', async () => {
+  const user=await account();
+  const outcomes=await Promise.allSettled(['a','b'].map(id=>financialData.writeData(user.id,{revision:0,transactions:[syncRow(id)],settings:{}})));
+  assert.equal(outcomes.filter(x=>x.status==='fulfilled').length,1);
+  assert.equal(outcomes.find(x=>x.status==='rejected').reason.status,409);
+  assert.equal((await financialData.readData(user.id)).transactions.length,1);
+});
+
+test('erro de validação reverte lote e revisão; IDs repetidos são recusados', async () => {
+  const user=await account();
+  await assert.rejects(financialData.writeData(user.id,{revision:0,transactions:[syncRow('a'),syncRow('b',{type:'invalid'})],settings:{}}));
+  assert.equal(await Transaction.countDocuments({user:user.id}),0);
+  assert.equal((await financialData.readData(user.id)).revision,0);
+  await assert.rejects(financialData.writeData(user.id,{revision:0,transactions:[syncRow(),syncRow()],settings:{}}),/repetido/);
+});
+
+test('exclusão por sincronização é recuperável e não muda registros de outra conta', async () => {
+  const user=await account(),other=await account();
+  await financialData.writeData(other.id,{revision:0,transactions:[syncRow()],settings:{}});
+  await financialData.writeData(user.id,{revision:0,transactions:[syncRow()],settings:{}});
+  await financialData.writeData(user.id,{revision:1,transactions:[],settings:{}});
+  assert.equal((await financialData.readData(user.id)).transactions.length,0);
+  assert.ok((await Transaction.findOne({user:user.id})).deletedAt);
+  assert.equal((await financialData.readData(other.id)).transactions.length,1);
+  await financialData.writeData(user.id,{revision:2,transactions:[syncRow()],settings:{}});
+  assert.equal(await Transaction.countDocuments({user:user.id}),1);
+  assert.equal((await financialData.readData(user.id)).transactions.length,1);
+});
+
+test('rotas antigas invalidam revisão de sync e conta vencida não contorna bloqueio via /data', async () => {
+  const user=await account();
+  await withApp(async url=>{
+    const headers=headersFor(user);
+    const initial=await fetch(url+'/api/data',{headers});assert.equal(initial.status,200);
+    const body=await initial.json();
+    const created=await fetch(url+'/api/transactions',{method:'POST',headers,body:JSON.stringify(syncRow())});assert.equal(created.status,201);
+    assert.equal((await fetch(url+'/api/data',{method:'PUT',headers,body:JSON.stringify(body)})).status,409);
+    process.env.BILLING_ENABLED='true';process.env.BILLING_ENFORCE_ACCESS='true';
+    await User.updateOne({_id:user.id},{$set:{status:'past_due'}});
+    assert.equal((await fetch(url+'/api/data',{headers})).status,200);
+    assert.equal((await fetch(url+'/api/data',{method:'PUT',headers,body:JSON.stringify({...body,revision:1})})).status,403);
+    assert.equal((await fetch(url+'/api/data')).status,401);
+  });
+});
 
 test('PIX e cartão usam payload produtivo e intent persistido; preferências pendentes não colidem', async () => {
   process.env.BILLING_ENABLED = 'true';

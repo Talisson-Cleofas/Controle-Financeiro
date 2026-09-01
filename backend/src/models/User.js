@@ -30,6 +30,8 @@ const userSchema = new mongoose.Schema(
     },
     // Additive fields only. Missing enrollment preserves existing accounts.
     billingEnrolledAt: Date,
+    financialRevision: { type: Number, default: 0 },
+    financialSettings: mongoose.Schema.Types.Mixed,
     cpf: { type: String, select: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     status: { type: String, enum: ['trial', 'active', 'past_due', 'blocked', 'cancelled'] },
