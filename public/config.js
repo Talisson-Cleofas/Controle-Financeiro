@@ -1,5 +1,5 @@
 window.APP_CONFIG = window.APP_CONFIG || {
-  API_URL: 'https://controle-financeiro-e1pp.onrender.com'
+  API_URL: 'https://controle-financeiro-v2-staging.onrender.com'
 };
 
 // UI Lab: carrega a camada visual somente nesta branch de preview.

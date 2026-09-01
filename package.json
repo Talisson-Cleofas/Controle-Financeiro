@@ -4,6 +4,8 @@
   "private": true,
   "description": "Projeto completo com frontend PWA, backend Node.js/Express e MongoDB.",
   "scripts": {
+    "postinstall": "npm ci --prefix backend",
+    "start": "node backend/src/homologation.js",
     "backend:install": "cd backend && npm install",
     "backend:dev": "cd backend && npm run dev",
     "backend:start": "cd backend && npm start",
