@@ -2011,8 +2011,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     return defaults;
   }
 
-  function saveTransactions(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions)); if(window.CloudSync) window.CloudSync.queue(); }
-  function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); if(window.CloudSync) window.CloudSync.queue(); }
+  function saveTransactions(){ window.CloudSync?.assertEditable(); localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions)); if(window.CloudSync) window.CloudSync.queue(); }
+  function saveSettings(){ window.CloudSync?.assertEditable(); localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); if(window.CloudSync) window.CloudSync.queue(); }
   function makeId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,9); }
 
   function uniqueSorted(list){
@@ -3475,7 +3475,7 @@ function closeMoreMenu(){
     fillWalletSelect('walletInput');
     updateRecurringCategorySelect();
     renderWalletDaySelects();
-    generateRecurringForMonth(currentMonthKey(), false);
+    window.addEventListener('cf-sync-ready', () => generateRecurringForMonth(currentMonthKey(), false), {once:true});
     refreshMonthFilters();
     refreshCategoryFilter();
     bindEvents();

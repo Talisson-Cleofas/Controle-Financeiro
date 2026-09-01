@@ -1,7 +1,7 @@
 window.CloudSync = (() => {
   const TK='cf_saas_token', REV='cf_cloud_revision', OWNER='cf_cloud_owner', DIRTY='cf_cloud_dirty';
   const TX='controleFinanceiro_v2_transactions', SETTINGS='controleFinanceiro_v2_settings';
-  let timer, ready=false, sending=false, again=false, allowed=true;
+  let timer, ready=false, sending=false, again=false, allowed=true, sessionToken=null, sessionOwner=null;
   const token=()=>localStorage.getItem(TK);
   const status=text=>{const el=document.getElementById('saasSync');if(el)el.textContent=text;const notice=document.getElementById('syncNotice');if(notice)notice.textContent=text;};
   async function api(path,options={}) {
@@ -31,7 +31,7 @@ window.CloudSync = (() => {
   }
   const snapshot=()=>({transactions:JSON.parse(localStorage.getItem(TX)||'[]'),settings:JSON.parse(localStorage.getItem(SETTINGS)||'{}'),revision:Number(localStorage.getItem(REV))});
   async function push() {
-    if(!ready||!token()||!allowed)return;
+    if(!ready||!token()||!allowed||token()!==sessionToken||localStorage.getItem(OWNER)!==sessionOwner)return;
     if(sending){again=true;return;}
     sending=true;const authToken=token(),owner=localStorage.getItem(OWNER);
     try {
@@ -48,6 +48,13 @@ window.CloudSync = (() => {
     } finally {sending=false;if(again&&ready){again=false;queue();}}
   }
   function queue(){localStorage.setItem(DIRTY,'1');clearTimeout(timer);timer=setTimeout(push,700);}
+  function markReady(){ready=true;if(allowed)window.dispatchEvent?.(new Event('cf-sync-ready'));}
+  function assertEditable(){
+    if(!ready||!allowed||token()!==sessionToken||localStorage.getItem(OWNER)!==sessionOwner){
+      const message=!allowed?'Renove o plano para salvar alterações.':'Aguarde a sincronização. Se a conta mudou em outra aba, recarregue esta página antes de editar.';
+      status(message);alert(message);throw new Error(message);
+    }
+  }
   function installControls(){
     if(document.getElementById('syncNotice'))return;
     const footer=document.createElement('div');footer.style.cssText='padding:12px;text-align:center;font-size:14px';
@@ -73,14 +80,15 @@ window.CloudSync = (() => {
       const {user}=await api('/api/auth/me');if(token()!==authToken)return;
       const data=await api('/api/data');if(token()!==authToken)return;
       const owner=user.id||user._id, sameOwner=localStorage.getItem(OWNER)===owner;
+      sessionToken=authToken;sessionOwner=owner;
       allowed=user.access?.allowed!==false;
       if(sameOwner)setAccount(user);
       const local=JSON.parse(localStorage.getItem(TX)||'[]');
       if(!force && sameOwner && localStorage.getItem(DIRTY)==='1'){
         if(Number(localStorage.getItem(REV))!==data.revision){status('Conflito: mantenha um backup e use Recarregar nuvem.');return;}
-        ready=true;await push();return;
+        markReady();await push();return;
       }
-      if(!force && sameOwner && localStorage.getItem('cf_cloud_loaded')==='1' && Number(localStorage.getItem(REV))===data.revision){ready=true;status('Sincronizado');return;}
+      if(!force && sameOwner && localStorage.getItem('cf_cloud_loaded')==='1' && Number(localStorage.getItem(REV))===data.revision){markReady();status(localStorage.getItem(DIRTY)?'Alterações pendentes':'Sincronizado');return;}
       if(local.length||localStorage.getItem(SETTINGS))backup();
       // Never silently upload an unowned cache into a different account.
       if(!force && !sameOwner && local.length && !data.transactions.length && allowed && confirm('Há lançamentos locais e esta conta está vazia na nuvem. Esses dados são seus e devem ser importados para esta conta?')){
@@ -95,5 +103,5 @@ window.CloudSync = (() => {
   async function authenticate(path,body){const d=await api(path,{method:'POST',body:JSON.stringify(body)});localStorage.setItem(TK,d.token);location.reload();}
   const startCheckout=()=>{location.href='/vendas';};
   window.startCheckout=startCheckout;
-  return {boot,queue,api,startCheckout,login:(email,password)=>authenticate('/api/auth/login',{email,password}),register:(name,email,password)=>authenticate('/api/auth/register',{name,email,password}),logout(){clearTimeout(timer);ready=false;localStorage.removeItem(TK);location.reload();}};
+  return {boot,queue,api,assertEditable,startCheckout,login:(email,password)=>authenticate('/api/auth/login',{email,password}),register:(name,email,password)=>authenticate('/api/auth/register',{name,email,password}),logout(){clearTimeout(timer);ready=false;localStorage.removeItem(TK);location.reload();}};
 })();

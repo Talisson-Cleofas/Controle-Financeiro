@@ -8,7 +8,7 @@ function browser({entries={},fetch,quota=false}={}){
   const data=new Map(Object.entries({[TK]:'fake',...entries})),nodes=new Map();let reloads=0;
   const node=()=>({textContent:'',classList:{add(){},remove(){}},remove(){}});
   for(const id of ['syncNotice','saasSync','saasGate','saasUserName'])nodes.set(id,node());
-  const context={window:{APP_CONFIG:{API_URL:'https://api.example.invalid'}},document:{getElementById:id=>nodes.get(id)||null},localStorage:{getItem:k=>data.get(k)??null,setItem(k,v){if(quota&&k.startsWith('cf_recovery_'))throw new Error('quota');data.set(k,String(v));},removeItem:k=>data.delete(k)},location:{reload(){reloads++;}},setTimeout(){},clearTimeout(){},confirm:()=>false,fetch};
+  const context={window:{APP_CONFIG:{API_URL:'https://api.example.invalid'}},document:{getElementById:id=>nodes.get(id)||null},localStorage:{getItem:k=>data.get(k)??null,setItem(k,v){if(quota&&k.startsWith('cf_recovery_'))throw new Error('quota');data.set(k,String(v));},removeItem:k=>data.delete(k)},location:{reload(){reloads++;}},setTimeout(){},clearTimeout(){},confirm:()=>false,alert(){},fetch};
   vm.runInNewContext(source,context);
   return {sync:context.window.CloudSync,data,nodes,reloads:()=>reloads};
 }
@@ -41,4 +41,11 @@ test('página de renovação e scripts publicados têm sintaxe válida',()=>{
   new vm.Script(fs.readFileSync(new URL('../../public/billing-page.js',import.meta.url),'utf8'));
   const main=fs.readFileSync(new URL('../../public/index.html',import.meta.url),'utf8');
   for(const match of main.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(!match[0].includes('type="module"'))new vm.Script(match[1]);
+});
+
+test('troca de conta em outra aba impede salvar o cache da sessão anterior',async()=>{
+  const b=browser({entries:{[TX]:'[]',cf_cloud_owner:'u',cf_cloud_revision:'0',cf_cloud_loaded:'1'},fetch:async url=>url.endsWith('/me')?response({user:{id:'u',name:'Teste'}}):response({transactions:[],settings:{},revision:0})});
+  await b.sync.boot();assert.doesNotThrow(()=>b.sync.assertEditable());
+  b.data.set(TK,'token-de-outra-conta');b.data.set('cf_cloud_owner','other');
+  assert.throws(()=>b.sync.assertEditable(),/conta mudou/);
 });
