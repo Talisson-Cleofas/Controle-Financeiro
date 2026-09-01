@@ -1,4 +1,5 @@
 const Transaction = require('../models/Transaction');
+const { financialWrite } = require('../services/financial-data');
 
 function parseMonthRange(month) {
   const safeMonth = /^\d{4}-\d{2}$/.test(month || '') ? month : new Date().toISOString().slice(0, 7);
@@ -14,6 +15,7 @@ function buildFilters(req) {
 
   const filter = {
     user: req.user._id,
+    deletedAt: null,
     date: { $gte: start, $lt: end }
   };
 
@@ -50,7 +52,10 @@ async function listTransactions(req, res, next) {
 async function createTransaction(req, res, next) {
   try {
     const data = normalizeBody(req.body);
-    const transaction = await Transaction.create({ ...data, user: req.user._id });
+    const { result: transaction } = await financialWrite(req.user._id, async session => {
+      const [row] = await Transaction.create([{ ...data, user: req.user._id }], { session });
+      return row;
+    });
     return res.status(201).json({ transaction });
   } catch (error) {
     next(error);
@@ -60,11 +65,11 @@ async function createTransaction(req, res, next) {
 async function updateTransaction(req, res, next) {
   try {
     const data = normalizeBody(req.body);
-    const transaction = await Transaction.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
+    const { result: transaction } = await financialWrite(req.user._id, session => Transaction.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id, deletedAt: null },
       data,
-      { new: true, runValidators: true }
-    );
+      { new: true, runValidators: true, session }
+    ));
 
     if (!transaction) {
       return res.status(404).json({ message: 'Lançamento não encontrado.' });
@@ -78,7 +83,7 @@ async function updateTransaction(req, res, next) {
 
 async function deleteTransaction(req, res, next) {
   try {
-    const transaction = await Transaction.findOneAndDelete({ _id: req.params.id, user: req.user._id });
+    const { result: transaction } = await financialWrite(req.user._id, session => Transaction.findOneAndUpdate({ _id: req.params.id, user: req.user._id, deletedAt: null }, { $set: { deletedAt: new Date() } }, { new: true, session }));
 
     if (!transaction) {
       return res.status(404).json({ message: 'Lançamento não encontrado.' });

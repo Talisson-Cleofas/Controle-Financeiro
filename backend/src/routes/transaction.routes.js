@@ -1,5 +1,6 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/auth');
+const { requireWriteAccess } = require('../services/billing-access');
 const {
   listTransactions,
   createTransaction,
@@ -16,8 +17,9 @@ router.use(authMiddleware);
 router.get('/', listTransactions);
 router.get('/summary', getSummary);
 router.get('/export', exportCsv);
-router.post('/', createTransaction);
-router.put('/:id', updateTransaction);
-router.delete('/:id', deleteTransaction);
+// Reading and exporting remain available even after a paid account expires.
+router.post('/', requireWriteAccess, createTransaction);
+router.put('/:id', requireWriteAccess, updateTransaction);
+router.delete('/:id', requireWriteAccess, deleteTransaction);
 
 module.exports = router;

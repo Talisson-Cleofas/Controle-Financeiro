@@ -1910,19 +1910,8 @@
 <div class="toast" id="toast">Tudo certo!</div>
 
 
+<script src="./cloud-sync.js?v=1"></script>
 <script>
-window.CloudSync=(function(){
- const TK='cf_saas_token',REV='cf_cloud_revision'; let timer=null; const token=()=>localStorage.getItem(TK);
- async function api(url,opts={}){const base=String(window.APP_CONFIG?.API_URL||'').replace(/\/$/,'');const r=await fetch(base+url,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{}),...(token()?{Authorization:'Bearer '+token()}:{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Erro na operação.');return d}
- function setAccount(user){document.getElementById('saasGate').classList.add('hidden');document.getElementById('saasAccount').classList.remove('hidden');document.getElementById('saasUserName').textContent=user.name;const labels={active:'Ativo',trial:'Teste',past_due:'Vencido',blocked:'Bloqueado',cancelled:'Cancelado'};document.getElementById('saasUserPlan').textContent=(labels[user.status]||user.status)+' • '+user.plan;document.getElementById('adminLink').style.display=user.role==='admin'?'inline':'none';if(user.access&&!user.access.allowed){let box=document.getElementById('subscriptionBlock');if(!box){box=document.createElement('div');box.id='subscriptionBlock';box.style.cssText='position:fixed;inset:0;background:rgba(2,6,23,.92);z-index:99999;display:grid;place-items:center;padding:20px';box.innerHTML='<div style="max-width:680px;background:#fff;color:#0f172a;border-radius:20px;padding:28px;text-align:center"><h2>Acesso vencido</h2><p id="subscriptionReason"></p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn ghost" id="payMonthly">Mensal</button><button class="btn primary" id="paySemiannual">Semestral</button><button class="btn ghost" id="payYearly">Anual</button><button class="btn ghost" id="expiredLogout">Sair</button></div></div>';document.body.appendChild(box);document.getElementById('payMonthly').onclick=()=>location.href='./vendas.html?plan=monthly';document.getElementById('paySemiannual').onclick=()=>location.href='./vendas.html?plan=semiannual';document.getElementById('payYearly').onclick=()=>location.href='./vendas.html?plan=yearly';document.getElementById('expiredLogout').onclick=()=>CloudSync.logout()}document.getElementById('subscriptionReason').textContent=user.access.reason||'Escolha um plano para continuar.';}return user.access?.allowed!==false;}
- async function pull(){const d=await api('/api/data');localStorage.setItem('controleFinanceiro_v2_transactions',JSON.stringify(d.transactions||[]));localStorage.setItem('controleFinanceiro_v2_settings',JSON.stringify(d.settings||{}));localStorage.setItem(REV,String(d.revision||1));localStorage.setItem('cf_cloud_loaded','1');}
- async function push(){try{document.getElementById('saasSync').textContent='Sincronizando...';const d=await api('/api/data',{method:'PUT',body:JSON.stringify({transactions:JSON.parse(localStorage.getItem('controleFinanceiro_v2_transactions')||'[]'),settings:JSON.parse(localStorage.getItem('controleFinanceiro_v2_settings')||'{}'),revision:Number(localStorage.getItem(REV)||1)})});localStorage.setItem(REV,String(d.revision));document.getElementById('saasSync').textContent='Sincronizado';}catch(e){document.getElementById('saasSync').textContent=e.message.includes('outro dispositivo')?'Conflito de sincronização':'Sem conexão';}}
- function queue(){clearTimeout(timer);timer=setTimeout(push,700)}
- async function boot(){if(!token())return;try{const {user}=await api('/api/auth/me');const allowed=setAccount(user);if(allowed&&localStorage.getItem('cf_cloud_loaded')!=='1'){await pull();location.reload()}}catch(e){if(e.message!=='Seu período de acesso expirou. Escolha um plano para continuar.')localStorage.removeItem(TK)}}
- async function login(email,password){const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email,password})});localStorage.setItem(TK,d.token);localStorage.removeItem('cf_cloud_loaded');localStorage.removeItem(REV);location.reload()}
- async function register(name,email,password){const d=await api('/api/auth/register',{method:'POST',body:JSON.stringify({name,email,password})});localStorage.setItem(TK,d.token);localStorage.removeItem('cf_cloud_loaded');localStorage.removeItem(REV);location.reload()}
- async function startCheckout(plan){const d=await api('/api/billing/checkout',{method:'POST',body:JSON.stringify({plan})});location.href=d.checkoutUrl} window.startCheckout=startCheckout; return{boot,queue,login,register,api,startCheckout,logout(){localStorage.removeItem(TK);localStorage.removeItem('cf_cloud_loaded');localStorage.removeItem(REV);location.reload()}};
-})();
 window.addEventListener('DOMContentLoaded',()=>{
  const $=id=>document.getElementById(id), show=(which)=>{const login=which==='login';$('loginForm').classList.toggle('hidden',!login);$('registerForm').classList.toggle('hidden',login);$('loginTab').classList.toggle('active',login);$('registerTab').classList.toggle('active',!login)};$('loginTab').onclick=()=>show('login');$('registerTab').onclick=()=>show('register');
  $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginError').textContent='';try{await CloudSync.login($('loginEmail').value,$('loginPassword').value)}catch(x){$('loginError').textContent=x.message}};
@@ -1970,7 +1959,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       list = [];
     }
 
-    if(list.length === 0){
+    if(list.length === 0 && !localStorage.getItem('cf_cloud_owner')){
       try{
         const oldRaw = localStorage.getItem(OLD_EXPENSE_KEY);
         const oldList = oldRaw ? JSON.parse(oldRaw) : [];
@@ -2022,8 +2011,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     return defaults;
   }
 
-  function saveTransactions(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions)); if(window.CloudSync) window.CloudSync.queue(); }
-  function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); if(window.CloudSync) window.CloudSync.queue(); }
+  function saveTransactions(){ window.CloudSync?.assertEditable(); localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions)); if(window.CloudSync) window.CloudSync.queue(); }
+  function saveSettings(){ window.CloudSync?.assertEditable(); localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); if(window.CloudSync) window.CloudSync.queue(); }
   function makeId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,9); }
 
   function uniqueSorted(list){
@@ -3486,7 +3475,7 @@ function closeMoreMenu(){
     fillWalletSelect('walletInput');
     updateRecurringCategorySelect();
     renderWalletDaySelects();
-    generateRecurringForMonth(currentMonthKey(), false);
+    window.addEventListener('cf-sync-ready', () => generateRecurringForMonth(currentMonthKey(), false), {once:true});
     refreshMonthFilters();
     refreshCategoryFilter();
     bindEvents();

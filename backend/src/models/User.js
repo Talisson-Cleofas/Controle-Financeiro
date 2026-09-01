@@ -27,7 +27,18 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0
-    }
+    },
+    // Additive fields only. Missing enrollment preserves existing accounts.
+    billingEnrolledAt: Date,
+    financialRevision: { type: Number, default: 0 },
+    financialSettings: mongoose.Schema.Types.Mixed,
+    cpf: { type: String, select: false },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    status: { type: String, enum: ['trial', 'active', 'past_due', 'blocked', 'cancelled'] },
+    plan: { type: String, enum: ['trial', 'monthly', 'semiannual', 'yearly', 'lifetime'] },
+    trialEndsAt: Date,
+    subscriptionEndsAt: Date,
+    billingRevision: { type: Number, default: 0 }
   },
   { timestamps: true }
 );
@@ -47,6 +58,12 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     name: this.name,
     email: this.email,
     monthlyBudget: this.monthlyBudget || 0,
+    role: this.role,
+    status: this.status || 'active',
+    plan: this.plan || 'legacy',
+    trialEndsAt: this.trialEndsAt,
+    subscriptionEndsAt: this.subscriptionEndsAt,
+    access: require('../services/billing-access').accessState(this),
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };
