@@ -119,6 +119,51 @@ const account = (extra = {}) => User.create({ name: 'Teste', email: `${crypto.ra
 const remote = (user, extra = {}) => ({ id: '1001', external_reference: `${user.id}:monthly:test`, status: 'approved', transaction_amount: 19.9, currency_id: 'BRL', ...extra });
 const latest = user => User.findById(user._id);
 
+test('PIX e cartão usam payload produtivo e intent persistido; preferências pendentes não colidem', async () => {
+  process.env.BILLING_ENABLED = 'true';
+  process.env.MERCADO_PAGO_ACCESS_TOKEN = 'test-token-not-real';
+  process.env.BACKEND_URL = 'https://backend.example.invalid';
+  process.env.FRONTEND_URL = 'https://frontend.example.invalid';
+  const user = await account();
+  const realFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options) => {
+    if (!String(url).startsWith('https://api.mercadopago.com/')) return realFetch(url, options);
+    const body = JSON.parse(options.body);
+    calls.push({ url, body });
+    assert.ok(await Payment.findOne({ externalReference: body.external_reference }));
+    assert.ok(options.headers['X-Idempotency-Key']);
+    assert.equal(body.notification_url, 'https://backend.example.invalid/api/billing/webhook');
+    if (String(url).endsWith('/v1/payments')) {
+      assert.equal(body.payment_method_id, 'pix');
+      assert.equal(body.transaction_amount, 19.9);
+      return new Response(JSON.stringify({ id: '987654', external_reference: body.external_reference, status: 'pending', transaction_amount: 19.9, currency_id: 'BRL', point_of_interaction: { transaction_data: { qr_code: 'fake-pix-for-test' } } }), { status: 201 });
+    }
+    assert.ok(String(url).endsWith('/checkout/preferences'));
+    assert.equal(body.items[0].currency_id, 'BRL');
+    return new Response(JSON.stringify({ id: `pref-${calls.length}`, init_point: 'https://checkout.example.invalid/production', sandbox_init_point: 'https://checkout.example.invalid/test' }), { status: 201 });
+  };
+  try {
+    await withApp(async url => {
+      const headers = headersFor(user);
+      const response = await fetch(`${url}/api/billing/pix`, { method: 'POST', headers, body: JSON.stringify({ plan: 'monthly', cpf: '12345678909', amount: 0.01 }) });
+      assert.equal(response.status, 201);
+      assert.equal((await response.json()).qrCode, 'fake-pix-for-test');
+      for (let i=0;i<2;i++) {
+        const checkout = await fetch(`${url}/api/billing/checkout`, { method: 'POST', headers, body: JSON.stringify({ plan: 'monthly' }) });
+        assert.equal(checkout.status, 200);
+        assert.equal((await checkout.json()).checkoutUrl, 'https://checkout.example.invalid/production');
+      }
+    });
+    assert.equal(calls.length, 3);
+    assert.equal(await Payment.countDocuments({ userId: user._id }), 3);
+    assert.equal((await latest(user)).subscriptionEndsAt, undefined);
+  } finally {
+    globalThis.fetch = realFetch;
+    delete process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  }
+});
+
 test('dez confirmações simultâneas concedem apenas um período', async () => {
   const user = await account();
   await Promise.all(Array.from({ length: 10 }, () => processPayment(remote(user), { now: start })));
