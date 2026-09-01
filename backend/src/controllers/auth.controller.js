@@ -31,7 +31,10 @@ async function register(req, res, next) {
     }
 
     const passwordHash = await User.hashPassword(password);
-    const user = await User.create({ name, email, passwordHash });
+    const enrollment = require('../services/billing-access').billingEnabled()
+      ? { billingEnrolledAt: new Date(), status: 'trial', plan: 'trial', trialEndsAt: new Date(Date.now() + 3 * 86400000) }
+      : {};
+    const user = await User.create({ name, email, passwordHash, ...enrollment });
     const token = signToken(user);
 
     return res.status(201).json({ token, user: user.toSafeJSON() });
