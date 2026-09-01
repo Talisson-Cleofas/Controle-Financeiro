@@ -11,6 +11,10 @@ const schema = new mongoose.Schema({
   currency:{type:String,default:'BRL'},
   paidAt:Date,
   processedAt:Date,
+  externalReference:{type:String,index:true}, expectedAmount:Number,
+  providerUpdatedAt:Date, refundedAmount:{type:Number,default:0},
+  licenseStartsAt:Date, licenseEndsAt:Date, licenseReversedAt:Date,
+  needsReview:{type:Boolean,default:false}, reviewReason:String,
   paymentMethod:{type:String,default:'pix'}, qrCode:String, qrCodeBase64:String, ticketUrl:String, expiresAt:Date, payload:mongoose.Schema.Types.Mixed
 },{timestamps:true});
 schema.index({provider:1,externalId:1},{unique:true,name:'provider_externalId_unique_when_present_v2',partialFilterExpression:{externalId:{$type:'string'}}});
