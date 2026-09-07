@@ -20,6 +20,7 @@ async function connectDatabase() {
   const adminEmail = String(process.env.HMG_ADMIN_EMAIL || '').trim().toLowerCase();
   if (adminEmail) {
     const User = require('../models/User');
+    await User.updateMany({ role: 'admin', email: { $ne: adminEmail } }, { $set: { role: 'user' } });
     const result = await User.updateOne({ email: adminEmail }, { $set: { role: 'admin' } });
     console.log(`Administrador de homologação configurado: ${result.matchedCount === 1 ? 'sim' : 'conta não encontrada'}`);
   }
