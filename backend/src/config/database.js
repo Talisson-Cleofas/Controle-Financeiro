@@ -17,6 +17,13 @@ async function connectDatabase() {
     serverSelectionTimeoutMS: 10000
   });
 
+  const adminEmail = String(process.env.HMG_ADMIN_EMAIL || '').trim().toLowerCase();
+  if (adminEmail) {
+    const User = require('../models/User');
+    const result = await User.updateOne({ email: adminEmail }, { $set: { role: 'admin' } });
+    console.log(`Administrador de homologação configurado: ${result.matchedCount === 1 ? 'sim' : 'conta não encontrada'}`);
+  }
+
   console.log('✅ MongoDB conectado com sucesso');
 }
 
