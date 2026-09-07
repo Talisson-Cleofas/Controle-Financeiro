@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import Payment from '../src/billing/models/Payment.js';
 import User from '../src/billing/models/User.js';
+import PartnerInvite from '../src/models/PartnerInvite.js';
 import WebhookJob from '../src/billing/models/WebhookJob.js';
 import { processPayment, processOrder } from '../src/billing/services/payment-processing.js';
 import { createWebhookHandler, persistWebhook, runNextWebhookJob } from '../src/billing/services/billing-webhooks.js';
@@ -23,7 +24,7 @@ before(async () => {
   replica = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
   // Always an ephemeral local replica set, never MONGODB_URI from the environment.
   await mongoose.connect(replica.getUri(), { dbName: 'billing_tests' });
-  await Promise.all([User.init(), Payment.init(), WebhookJob.init()]);
+  await Promise.all([User.init(), Payment.init(), WebhookJob.init(), PartnerInvite.init()]);
 });
 after(async () => { await mongoose.disconnect(); await replica?.stop(); });
 beforeEach(async () => {
@@ -33,7 +34,7 @@ beforeEach(async () => {
   process.env.MERCADO_PAGO_ENV = 'production';
   process.env.MERCADO_PAGO_WEBHOOK_SECRET = 'local-test-only';
   delete process.env.PLAN_MONTHLY_PRICE;
-  await Promise.all([Payment.deleteMany({}), User.deleteMany({}), WebhookJob.deleteMany({})]);
+  await Promise.all([Payment.deleteMany({}), User.deleteMany({}), WebhookJob.deleteMany({}), PartnerInvite.deleteMany({})]);
 });
 
 async function withApp(run) {
@@ -145,6 +146,32 @@ test('licença parceiro valida código, percentuais e vencimento', async () => {
       { email: partner.email, code: 'CODIGO', discountPercent: 80, commissionPercent: 30 },
       { email: partner.email, code: 'CODIGO', expiresAt: 'invalida' }
     ]) assert.equal((await fetch(`${url}/api/admin/partners`, { method: 'POST', headers: headersFor(admin), body: JSON.stringify(body) })).status, 400);
+  });
+});
+
+test('administrador cria convite e parceiro define a própria senha uma única vez', async () => {
+  process.env.BILLING_ENABLED = 'true';
+  process.env.BILLING_ENFORCE_ACCESS = 'true';
+  const admin = await account({ role: 'admin' });
+  await withApp(async url => {
+    const invitation = await fetch(`${url}/api/admin/partners/invite`, {
+      method: 'POST', headers: headersFor(admin),
+      body: JSON.stringify({ name: 'Parceira Nova', email: 'nova.parceira@example.invalid', code: 'NOVA20', commissionPercent: 20 })
+    });
+    assert.equal(invitation.status, 201);
+    const token = new URL(`https://frontend.invalid${(await invitation.json()).invitePath}`).searchParams.get('token');
+    assert.ok(token);
+    const inspected = await fetch(`${url}/api/auth/partner-invite/inspect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
+    assert.equal(inspected.status, 200);
+    assert.equal((await inspected.json()).invitation.email, 'nova.parceira@example.invalid');
+    const accepted = await fetch(`${url}/api/auth/partner-invite/accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password: 'senha-segura-123' }) });
+    assert.equal(accepted.status, 201);
+    const session = await accepted.json();
+    assert.equal(session.user.plan, 'partner');
+    assert.equal(session.user.access.source, 'partner');
+    assert.equal((await fetch(`${url}/api/auth/partner-invite/accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password: 'outra-senha-123' }) })).status, 404);
+    const login = await fetch(`${url}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'nova.parceira@example.invalid', password: 'senha-segura-123' }) });
+    assert.equal(login.status, 200);
   });
 });
 

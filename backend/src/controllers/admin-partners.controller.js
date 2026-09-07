@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const User = require('../models/User');
+const PartnerInvite = require('../models/PartnerInvite');
 
 const normalizeCode = value => String(value || '').trim().toUpperCase();
 const percent = value => Number(value || 0);
@@ -70,6 +72,35 @@ async function grant(req, res, next) {
   } catch (error) { next(error); }
 }
 
+async function invite(req, res, next) {
+  try {
+    const error = validate(req.body);
+    if (error) return res.status(400).json({ message: error });
+    const name = String(req.body.name || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const code = normalizeCode(req.body.code);
+    if (name.length < 2 || name.length > 80) return res.status(400).json({ message: 'Informe o nome do parceiro.' });
+    if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Informe um e-mail válido.' });
+    if (await User.exists({ email })) return res.status(409).json({ message: 'Este e-mail já possui conta. Use “Conceder a conta existente”.' });
+    if (await User.exists({ partnerCode: code })) return res.status(409).json({ message: 'Este código de parceiro já está em uso.' });
+    await PartnerInvite.deleteMany({ $or: [{ email }, { code }], acceptedAt: null });
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const invitation = await PartnerInvite.create({
+      name, email, code, tokenHash,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      accessExpiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : undefined,
+      discountPercent: percent(req.body.discountPercent),
+      commissionPercent: percent(req.body.commissionPercent),
+      createdBy: req.user._id
+    });
+    res.status(201).json({
+      invitation: { name, email, code, expiresAt: invitation.expiresAt },
+      invitePath: `/partner-invite.html?token=${rawToken}`
+    });
+  } catch (error) { next(error); }
+}
+
 async function revoke(req, res, next) {
   try {
     const partner = await User.findOne({ _id: req.params.id, plan: 'partner' });
@@ -80,4 +111,4 @@ async function revoke(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { list, grant, revoke };
+module.exports = { list, grant, invite, revoke };

@@ -6,5 +6,6 @@ const router = express.Router();
 router.use(auth, admin);
 router.get('/partners', controller.list);
 router.post('/partners', controller.grant);
+router.post('/partners/invite', controller.invite);
 router.post('/partners/:id/revoke', controller.revoke);
 module.exports = router;
