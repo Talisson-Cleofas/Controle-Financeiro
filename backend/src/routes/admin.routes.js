@@ -1,0 +1,11 @@
+const express = require('express');
+const auth = require('../middlewares/auth');
+const admin = require('../middlewares/admin');
+const controller = require('../controllers/admin-partners.controller');
+const router = express.Router();
+router.use(auth, admin);
+router.get('/partners', controller.list);
+router.post('/partners', controller.grant);
+router.post('/partners/invite', controller.invite);
+router.post('/partners/:id/revoke', controller.revoke);
+module.exports = router;

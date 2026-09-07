@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema(
   {
+    clientId: String,
+    uiData: mongoose.Schema.Types.Mixed,
+    deletedAt: Date,
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
