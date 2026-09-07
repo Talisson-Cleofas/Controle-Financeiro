@@ -5,6 +5,9 @@ function accessState(user, now = new Date()) {
   if (!user) return { allowed: false, reason: 'Conta não encontrada.' };
   if (!enforcementEnabled()) return { allowed: true, source: 'compatibility' };
   if (user.role === 'admin' || user.plan === 'lifetime') return { allowed: true, source: 'permanent' };
+  if (user.plan === 'partner' && user.partnerActive && (!user.partnerExpiresAt || new Date(user.partnerExpiresAt) > now)) {
+    return { allowed: true, source: 'partner', endsAt: user.partnerExpiresAt || undefined };
+  }
   if (['blocked', 'cancelled'].includes(user.status)) return { allowed: false, reason: 'Acesso suspenso.' };
   if (!user.billingEnrolledAt) return { allowed: true, source: 'legacy' };
   const end = user.status === 'trial' ? user.trialEndsAt : user.status === 'active' ? user.subscriptionEndsAt : null;

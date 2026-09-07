@@ -102,6 +102,53 @@ test('cadastro comercial ignora privilégios enviados pelo cliente e concede só
   });
 });
 
+test('somente administrador concede licença parceiro e o cadastro por link fica atribuído', async () => {
+  process.env.BILLING_ENABLED = 'true';
+  process.env.BILLING_ENFORCE_ACCESS = 'true';
+  const admin = await account({ role: 'admin' });
+  const ordinary = await account();
+  const partner = await account({ email: 'parceiro@example.invalid', status: 'past_due', trialEndsAt: day(-1) });
+  await withApp(async url => {
+    const payload = JSON.stringify({ email: partner.email, code: 'INFLUENTE10', discountPercent: 10, commissionPercent: 20 });
+    assert.equal((await fetch(`${url}/api/admin/partners`, { method: 'POST', headers: headersFor(ordinary), body: payload })).status, 403);
+    const granted = await fetch(`${url}/api/admin/partners`, { method: 'POST', headers: headersFor(admin), body: payload });
+    assert.equal(granted.status, 200);
+    assert.equal((await granted.json()).partner.code, 'INFLUENTE10');
+    const registration = await fetch(`${url}/api/auth/register`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Indicado', email: 'indicado@example.invalid', password: 'senha123', referralCode: 'influente10', role: 'admin', plan: 'partner' })
+    });
+    assert.equal(registration.status, 201);
+    const registered = await registration.json();
+    assert.equal(registered.user.role, 'user');
+    assert.equal(registered.user.plan, 'trial');
+    const saved = await User.findById(registered.user.id);
+    assert.equal(saved.referredByPartner.toString(), partner.id);
+    const list = await fetch(`${url}/api/admin/partners`, { headers: headersFor(admin) });
+    const listed = (await list.json()).partners[0];
+    assert.equal(listed.stats.registrations, 1);
+    const me = await fetch(`${url}/api/auth/me`, { headers: headersFor(partner) });
+    assert.equal((await me.json()).user.access.source, 'partner');
+    assert.equal((await fetch(`${url}/api/transactions`, { method: 'POST', headers: headersFor(partner), body: JSON.stringify({ type: 'income', description: 'Parceiro', amount: 1, category: 'Outros', date: '2026-09-01' }) })).status, 201);
+    assert.equal((await fetch(`${url}/api/admin/partners/${partner.id}/revoke`, { method: 'POST', headers: headersFor(admin) })).status, 200);
+    assert.equal((await fetch(`${url}/api/transactions`, { method: 'POST', headers: headersFor(partner), body: JSON.stringify({ type: 'income', description: 'Bloqueado', amount: 1, category: 'Outros', date: '2026-09-01' }) })).status, 403);
+  });
+});
+
+test('licença parceiro valida código, percentuais e vencimento', async () => {
+  process.env.BILLING_ENABLED = 'true';
+  const admin = await account({ role: 'admin' });
+  const partner = await account({ email: 'validacao@example.invalid' });
+  await withApp(async url => {
+    for (const body of [
+      { email: partner.email, code: 'x' },
+      { email: partner.email, code: 'CODIGO', discountPercent: 80, commissionPercent: 30 },
+      { email: partner.email, code: 'CODIGO', expiresAt: 'invalida' }
+    ]) assert.equal((await fetch(`${url}/api/admin/partners`, { method: 'POST', headers: headersFor(admin), body: JSON.stringify(body) })).status, 400);
+  });
+});
+
+
 test('Express 4 trata falha assíncrona do checkout sem travar e impede consulta de pagamento alheio', async () => {
   process.env.BILLING_ENABLED = 'true';
   delete process.env.MERCADO_PAGO_ACCESS_TOKEN;

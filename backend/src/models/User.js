@@ -35,12 +35,26 @@ const userSchema = new mongoose.Schema(
     cpf: { type: String, select: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     status: { type: String, enum: ['trial', 'active', 'past_due', 'blocked', 'cancelled'] },
-    plan: { type: String, enum: ['trial', 'monthly', 'semiannual', 'yearly', 'lifetime'] },
+    plan: { type: String, enum: ['trial', 'monthly', 'semiannual', 'yearly', 'lifetime', 'partner'] },
     trialEndsAt: Date,
     subscriptionEndsAt: Date,
+    partnerCode: { type: String, uppercase: true, trim: true },
+    partnerActive: { type: Boolean, default: false },
+    partnerExpiresAt: Date,
+    partnerDiscountPercent: { type: Number, min: 0, max: 100, default: 0 },
+    partnerCommissionPercent: { type: Number, min: 0, max: 100, default: 0 },
+    partnerGrantedAt: Date,
+    partnerGrantedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    referredByPartner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+    referredByPartnerCode: { type: String, uppercase: true, trim: true, index: true },
     billingRevision: { type: Number, default: 0 }
   },
   { timestamps: true }
+);
+
+userSchema.index(
+  { partnerCode: 1 },
+  { unique: true, name: 'partner_code_unique_when_present', partialFilterExpression: { partnerCode: { $type: 'string' } } }
 );
 
 userSchema.methods.comparePassword = async function comparePassword(password) {
@@ -63,6 +77,13 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     plan: this.plan || 'legacy',
     trialEndsAt: this.trialEndsAt,
     subscriptionEndsAt: this.subscriptionEndsAt,
+    partner: this.plan === 'partner' ? {
+      code: this.partnerCode,
+      active: Boolean(this.partnerActive),
+      expiresAt: this.partnerExpiresAt,
+      discountPercent: this.partnerDiscountPercent || 0,
+      commissionPercent: this.partnerCommissionPercent || 0
+    } : undefined,
     access: require('../services/billing-access').accessState(this),
     createdAt: this.createdAt,
     updatedAt: this.updatedAt

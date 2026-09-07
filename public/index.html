@@ -1915,7 +1915,7 @@
 window.addEventListener('DOMContentLoaded',()=>{
  const $=id=>document.getElementById(id), show=(which)=>{const login=which==='login';$('loginForm').classList.toggle('hidden',!login);$('registerForm').classList.toggle('hidden',login);$('loginTab').classList.toggle('active',login);$('registerTab').classList.toggle('active',!login)};$('loginTab').onclick=()=>show('login');$('registerTab').onclick=()=>show('register');
  $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginError').textContent='';try{await CloudSync.login($('loginEmail').value,$('loginPassword').value)}catch(x){$('loginError').textContent=x.message}};
- $('registerForm').onsubmit=async e=>{e.preventDefault();$('registerError').textContent='';try{await CloudSync.register($('registerName').value,$('registerEmail').value,$('registerPassword').value)}catch(x){$('registerError').textContent=x.message}};
+ $('registerForm').onsubmit=async e=>{e.preventDefault();$('registerError').textContent='';try{const ref=new URLSearchParams(location.search).get('ref')||'';await CloudSync.register($('registerName').value,$('registerEmail').value,$('registerPassword').value,ref)}catch(x){$('registerError').textContent=x.message}};
  $('forgotBtn').onclick=async()=>{const email=$('loginEmail').value||prompt('Digite seu e-mail:');if(!email)return;await CloudSync.api('/api/auth/forgot',{method:'POST',body:JSON.stringify({email})});alert('Se o e-mail estiver cadastrado, você receberá as instruções.')};$('logoutBtn').onclick=()=>CloudSync.logout();$('subscribeBtn').onclick=async()=>{try{await CloudSync.startCheckout('monthly')}catch(e){alert(e.message)}};CloudSync.boot();
 });
 </script>

@@ -20,6 +20,9 @@ window.CloudSync = (() => {
   function setAccount(user) {
     document.getElementById('saasGate')?.classList.add('hidden');
     const name=document.getElementById('saasUserName');if(name)name.textContent=user.name;
+    const plan=document.getElementById('saasUserPlan');if(plan)plan.textContent=user.plan==='partner'?'Licença Parceiro':(user.plan||'Plano');
+    const admin=document.getElementById('adminLink');if(admin)admin.style.display=user.role==='admin'?'inline-flex':'none';
+    const subscribe=document.getElementById('subscribeBtn');if(subscribe)subscribe.style.display=['partner','lifetime'].includes(user.plan)||user.role==='admin'?'none':'';
     allowed=user.access?.allowed!==false;
     if(!allowed && !document.getElementById('subscriptionBlock')) {
       const box=document.createElement('aside');box.id='subscriptionBlock';box.setAttribute('role','status');
@@ -71,13 +74,15 @@ window.CloudSync = (() => {
       const url=URL.createObjectURL(new Blob([JSON.stringify({version:2,...copy.data},null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='financeiro-recuperacao.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     };
     const plans=document.createElement('a');plans.href='/vendas';plans.className='btn ghost small';plans.textContent='Planos e renovação';
-    footer.append(notice,' ',reload,' ',download,' ',plans);document.body.append(footer);
+    const admin=document.createElement('a');admin.id='footerAdminLink';admin.href='/admin.html';admin.className='btn ghost small';admin.textContent='Parceiros';admin.style.display='none';
+    footer.append(notice,' ',reload,' ',download,' ',plans,' ',admin);document.body.append(footer);
   }
   async function boot(force=false) {
     installControls();if(!token())return;
     const authToken=token();
     try {
       const {user}=await api('/api/auth/me');if(token()!==authToken)return;
+      const admin=document.getElementById('footerAdminLink');if(admin)admin.style.display=user.role==='admin'?'inline-flex':'none';
       const data=await api('/api/data');if(token()!==authToken)return;
       const owner=user.id||user._id, sameOwner=localStorage.getItem(OWNER)===owner;
       sessionToken=authToken;sessionOwner=owner;
@@ -103,5 +108,5 @@ window.CloudSync = (() => {
   async function authenticate(path,body){const d=await api(path,{method:'POST',body:JSON.stringify(body)});localStorage.setItem(TK,d.token);location.reload();}
   const startCheckout=()=>{location.href='/vendas';};
   window.startCheckout=startCheckout;
-  return {boot,queue,api,assertEditable,startCheckout,login:(email,password)=>authenticate('/api/auth/login',{email,password}),register:(name,email,password)=>authenticate('/api/auth/register',{name,email,password}),logout(){clearTimeout(timer);ready=false;localStorage.removeItem(TK);location.reload();}};
+  return {boot,queue,api,assertEditable,startCheckout,login:(email,password)=>authenticate('/api/auth/login',{email,password}),register:(name,email,password,referralCode)=>authenticate('/api/auth/register',{name,email,password,referralCode}),logout(){clearTimeout(timer);ready=false;localStorage.removeItem(TK);location.reload();}};
 })();

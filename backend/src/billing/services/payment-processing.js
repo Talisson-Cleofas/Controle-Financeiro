@@ -59,7 +59,7 @@ async function reverseLicense(payment, user, now, session) {
     review(payment, 'Pagamento legado ou sem concessão rastreável: revisar o acesso manualmente.');
     return;
   }
-  if (user.role === 'admin' || user.plan === 'lifetime') {
+  if (user.role === 'admin' || user.plan === 'lifetime' || (user.plan === 'partner' && user.partnerActive)) {
     payment.licenseReversedAt = now;
     return;
   }
@@ -130,7 +130,7 @@ async function applyPayment(remote, { now = new Date(), sandboxOrder = false } =
         } else if (remote.refundedAmount > 0) {
           review(payment, 'Reembolso parcial: definir o ajuste de acesso manualmente.');
         } else if (remote.status === 'approved' && !payment.processedAt) {
-          if (user.role !== 'admin' && user.plan !== 'lifetime') {
+          if (user.role !== 'admin' && user.plan !== 'lifetime' && !(user.plan === 'partner' && user.partnerActive)) {
             payment.licenseStartsAt = user.subscriptionEndsAt > now ? user.subscriptionEndsAt : now;
             payment.licenseEndsAt = addPlanPeriod(user, plan, now);
             user.subscriptionEndsAt = payment.licenseEndsAt;
@@ -165,4 +165,3 @@ async function applyPayment(remote, { now = new Date(), sandboxOrder = false } =
 
 export const processPayment = (payment, options) => applyPayment(normalizePayment(payment), options);
 export const processOrder = (order, options) => applyPayment(normalizeOrder(order), { ...options, sandboxOrder: true });
-

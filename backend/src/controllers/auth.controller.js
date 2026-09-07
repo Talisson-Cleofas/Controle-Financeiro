@@ -34,7 +34,18 @@ async function register(req, res, next) {
     const enrollment = require('../services/billing-access').billingEnabled()
       ? { billingEnrolledAt: new Date(), status: 'trial', plan: 'trial', trialEndsAt: new Date(Date.now() + 3 * 86400000) }
       : {};
-    const user = await User.create({ name, email, passwordHash, ...enrollment });
+    const rawReferral = String(req.body.referralCode || req.body.ref || '').trim().toUpperCase();
+    let referral = {};
+    if (rawReferral && /^[A-Z0-9_-]{3,32}$/.test(rawReferral)) {
+      const partner = await User.findOne({
+        partnerCode: rawReferral,
+        plan: 'partner',
+        partnerActive: true,
+        $or: [{ partnerExpiresAt: null }, { partnerExpiresAt: { $gt: new Date() } }]
+      });
+      if (partner) referral = { referredByPartner: partner._id, referredByPartnerCode: partner.partnerCode };
+    }
+    const user = await User.create({ name, email, passwordHash, ...enrollment, ...referral });
     const token = signToken(user);
 
     return res.status(201).json({ token, user: user.toSafeJSON() });
